@@ -1,0 +1,20 @@
+{
+  "users": [
+    {
+      "username": "healthworker01",
+      "displayName": "Healthcare Worker 01",
+      "role": "Healthcare Worker",
+      "salt": "2oIEUiMFVGYyBZwt6919Yw==",
+      "passwordHash": "nKDXSLilKChC1DKwGHMDUJt/56rbCnwG0KVCQbrJaG4=",
+      "iterations": 120000
+    },
+    {
+      "username": "healthworker02",
+      "displayName": "Healthcare Worker 02",
+      "role": "Healthcare Worker",
+      "salt": "2oIEUiMFVGYyBZwt6919Yw==",
+      "passwordHash": "pRVOEbNVl+wzzJ/y92phaslaxuBlnehAAk3fXHGq+NM=",
+      "iterations": 120000
+    }
+  ]
+}

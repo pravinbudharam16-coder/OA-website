@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="32" fill="#0f766e"/>
+  <path d="M52 116c8-22 20-44 44-44s36 22 44 44" fill="none" stroke="#ccfbf1" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="66" cy="126" r="14" fill="#fbbf24"/>
+  <circle cx="126" cy="126" r="14" fill="#38bdf8"/>
+  <text x="96" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="38" font-weight="800" fill="#ffffff">OA</text>
+</svg>

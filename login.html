@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f766e" />
+  <title>SmartOA Healthcare Worker Login</title>
+  <link rel="stylesheet" href="./02_Frontend/assets/css/login.css" />
+</head>
+<body>
+  <main class="login-shell">
+    <section class="login-card" aria-labelledby="loginTitle">
+      <div class="brand">
+        <img src="./02_Frontend/assets/images/smartoa-logo.png" alt="Osteoarthritis" />
+        <div><strong>SmartOA</strong><span>Offline Screening</span></div>
+      </div>
+      <div class="login-heading">
+        <p class="eyebrow">Authorized access</p>
+        <h1 id="loginTitle">Healthcare Worker Login</h1>
+        <p>Sign in to access patient screening, sensor data, reports and local records.</p>
+      </div>
+      <form id="loginForm">
+        <label>Healthcare Worker ID<input id="username" name="username" type="text" autocomplete="username" required /></label>
+        <label>Password<input id="password" name="password" type="password" autocomplete="current-password" required /></label>
+        <button class="login-button" type="submit">Sign in</button>
+        <p class="login-status" id="loginStatus" role="alert"></p>
+      </form>
+      <p class="login-note">Authorized healthcare workers only. Screening data stays local in the current prototype unless you export or share it.</p><nav class="login-legal" aria-label="Legal"><a href="./privacy.html">Privacy Policy (draft)</a><a href="./terms.html">Terms of Service (draft)</a></nav>
+    </section>
+  </main>
+  <script src="./02_Frontend/assets/js/login.js"></script>
+</body>
+</html>

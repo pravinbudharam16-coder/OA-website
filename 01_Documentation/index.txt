@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>SmartOA Screening Console</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Primary">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">OA</span>
+          <div>
+            <strong>SmartOA</strong>
+            <span>Offline Screening</span>
+          </div>
+        </div>
+
+        <nav class="nav-list" id="pageNav">
+          <a class="active" href="#/intake" data-route="intake">Patient Intake</a>
+          <a href="#/sensors" data-route="sensors">Sensors</a>
+          <a href="#/occupation" data-route="occupation">Occupation</a>
+          <a href="#/screening" data-route="screening">Risk Result</a>
+          <a href="#/reports" data-route="reports">Reports</a>
+          <a href="#/architecture" data-route="architecture">Architecture</a>
+        </nav>
+
+        <div class="connection-card">
+          <span class="status-dot"></span>
+          <div>
+            <strong id="connectionLabel">Demo stream active</strong>
+            <span>ESP32 BLE simulation</span>
+          </div>
+        </div>
+      </aside>
+
+      <main>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="pageEyebrow">Low-cost osteoarthritis screening prototype</p>
+            <h1 id="pageTitle">Sensor-assisted OA risk assessment</h1>
+          </div>
+          <div class="top-actions">
+            <button class="icon-button" id="toggleStream" aria-label="Pause sensor stream" title="Pause sensor stream">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h3v14H8zM13 5h3v14h-3z"/></svg>
+            </button>
+            <button class="primary-button" id="saveReport">Save report</button>
+          </div>
+        </header>
+
+        <section class="page dashboard-grid" id="page-intake" data-page="intake">
+          <article class="assessment-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Clinical context</h2>
+              </div>
+              <span class="chip">Required inputs</span>
+            </div>
+
+            <form class="intake-form" id="intakeForm">
+              <label>
+                Patient ID
+                <input id="patientId" type="text" value="OA-1027" autocomplete="off" required />
+              </label>
+              <label>
+                Patient Name
+                <input id="patientName" type="text" value="Demo Patient" autocomplete="name" required />
+              </label>
+              <label>
+                Age
+                <input id="age" type="number" min="18" max="100" value="58" required />
+              </label>
+              <label>
+                BMI
+                <input id="bmi" type="number" min="12" max="55" step="0.1" value="29.4" required />
+              </label>
+              <label>
+                Knee pain
+                <select id="pain">
+                  <option value="1">Mild</option>
+                  <option value="2" selected>Moderate</option>
+                  <option value="3">Severe</option>
+                </select>
+              </label>
+              <label>
+                Morning stiffness
+                <select id="stiffness">
+                  <option value="0">None</option>
+                  <option value="1" selected>Under 30 min</option>
+                  <option value="2">Over 30 min</option>
+                </select>
+              </label>
+              <label>
+                Mobility limit
+                <select id="mobility">
+                  <option value="0">Low</option>
+                  <option value="1" selected>Medium</option>
+                  <option value="2">High</option>
+                </select>
+              </label>
+            </form>
+
+  
+          </article>
+
+
+        </section>
+
+        <section class="page dashboard-grid" id="page-screening" data-page="screening" hidden>
+          <article class="risk-panel">
+            <div class="risk-meter" aria-label="OA risk score">
+              <svg viewBox="0 0 160 160" role="img" aria-labelledby="riskTitle">
+                <title id="riskTitle">OA risk score</title>
+                <circle class="meter-bg" cx="80" cy="80" r="64"></circle>
+                <circle class="meter-value" id="meterValue" cx="80" cy="80" r="64"></circle>
+              </svg>
+              <div class="risk-center">
+                <strong id="riskScore">0</strong>
+                <span id="riskLevel">Calculating</span>
+              </div>
+            </div>
+            <div class="risk-copy">
+              <h2>Screening result</h2>
+              <p id="riskSummary">Combining symptoms, BMI, gait asymmetry, foot loading imbalance and occupation.</p>
+              <div class="factor-list" id="factorList"></div>
+              <div class="page-actions">
+                <button class="primary-button" id="saveReportInline" type="button">Save &amp; Download PDF report</button>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="page sensor-layout" id="page-sensors" data-page="sensors" hidden>
+          <article class="body-map-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Sensor placement</p>
+                <h2>2 IMU + 2 FSR setup</h2>
+              </div>
+            </div>
+            <div class="body-map">
+              <svg viewBox="0 0 420 320" aria-label="Sensor placement diagram">
+                <defs>
+                  <linearGradient id="legGradient" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#e0f2fe" />
+                    <stop offset="100%" stop-color="#99f6e4" />
+                  </linearGradient>
+                </defs>
+                <path class="torso" d="M185 34h50l24 78-23 52h-52l-23-52z" />
+                <path class="limb" d="M182 162l-35 106" />
+                <path class="limb" d="M238 162l35 106" />
+                <path class="foot" d="M130 276h54" />
+                <path class="foot" d="M236 276h54" />
+                <rect class="sensor imu left" x="128" y="170" width="48" height="30" rx="6" />
+                <rect class="sensor imu right" x="244" y="170" width="48" height="30" rx="6" />
+                <rect class="sensor fsr left" x="135" y="258" width="42" height="20" rx="5" />
+                <rect class="sensor fsr right" x="243" y="258" width="42" height="20" rx="5" />
+                <text x="152" y="190">IMU</text>
+                <text x="268" y="190">IMU</text>
+                <text x="156" y="273">FSR</text>
+                <text x="264" y="273">FSR</text>
+              </svg>
+            </div>
+          </article>
+
+          <article class="telemetry-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Live telemetry</p>
+                <h2>Movement and loading</h2><p class="panel-note">Telemetry is simulated until ESP32/BLE hardware is connected.</p>
+              </div>
+              <div class="sensor-controls"><span id="streamState" class="chip green">Streaming</span><button class="secondary-button compact" id="resetSensors" type="button">Reset demo</button></div>
+            </div>
+
+            <div class="metric-grid">
+              <div class="metric">
+                <span>Left IMU</span>
+                <strong id="leftImu">0.00 g</strong>
+              </div>
+              <div class="metric">
+                <span>Right IMU</span>
+                <strong id="rightImu">0.00 g</strong>
+              </div>
+              <div class="metric">
+                <span>Left FSR</span>
+                <strong id="leftFsr">0 N</strong>
+              </div>
+              <div class="metric">
+                <span>Right FSR</span>
+                <strong id="rightFsr">0 N</strong>
+              </div>
+            </div>
+
+            <canvas id="sensorChart" width="900" height="240" aria-label="Sensor trend chart"></canvas>
+          </article>
+        </section>
+
+        <section class="page occupation-page" id="page-occupation" data-page="occupation" hidden>
+          <article class="occupation-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Work activity</p>
+                <h2>Occupation assessment</h2>
+              </div>
+            </div>
+            <form class="intake-form" id="occupationForm">
+              <label>
+                Occupation type
+                <select id="occupationType">
+                  <option value="">Select occupation</option>
+                  <option value="sedentary">Sedentary (desk work)</option>
+                  <option value="light">Light activity (standing, walking)</option>
+                  <option value="moderate">Moderate activity (manual labor)</option>
+                  <option value="heavy">Heavy activity (construction, farming)</option>
+                  <option value="athletic">Athletic (sports, training)</option>
+                </select>
+              </label>
+              <label>
+                Daily standing hours
+                <input id="standingHours" type="number" min="0" max="16" step="0.5" value="4" />
+              </label>
+              <label>
+                Lifting frequency
+                <select id="liftingFreq">
+                  <option value="0">Never</option>
+                  <option value="1">Rarely (1-2x/week)</option>
+                  <option value="2" selected>Occasionally (3-5x/week)</option>
+                  <option value="3">Frequently (daily)</option>
+                  <option value="4">Constantly (multiple times/day)</option>
+                </select>
+              </label>
+              <label>
+                Repetitive movements
+                <select id="repetitiveMovements">
+                  <option value="0">None</option>
+                  <option value="1" selected>Low</option>
+                  <option value="2">Moderate</option>
+                  <option value="3">High</option>
+                </select>
+              </label>
+            </form>
+          </article>
+
+          <article class="occupation-risk-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Risk factor</p>
+                <h2>Occupational impact</h2>
+              </div>
+            </div>
+            <div class="occupation-summary">
+              <p id="occupationSummary">Select occupation details to assess occupational risk factors for osteoarthritis.</p>
+              <div class="occupation-factors" id="occupationFactors"></div>
+            </div>
+          </article>
+        </section>
+
+        <section class="page reports-page" id="page-reports" data-page="reports" hidden>
+          <article class="reports-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Saved reports</h2>
+              </div>
+              <button class="secondary-button" id="clearReports">Clear</button>
+            </div>
+            <div class="report-list" id="reportList"></div>
+            <p class="panel-note">Reports are stored locally on this device using IndexedDB. The table below is a readable view of the same local records.</p>
+
+            <div class="local-db-wrap">
+              <div class="local-db-heading">
+                <div>
+                  <h3>Patient records</h3>
+                </div>
+                <span class="chip" id="dbRecordCount">0 records</span>
+              </div>
+              <div class="table-scroll">
+                <table class="local-db-table">
+                  <thead>
+                    <tr>
+                      <th>Date &amp; Time</th>
+                      <th>Patient ID</th>
+                      <th>Name</th>
+                      <th>Age</th>
+                      <th>BMI</th>
+                      <th>Knee Pain</th>
+                      <th>Morning Stiffness</th>
+                      <th>Mobility Issue</th>
+                      <th>Occupation</th>
+                      <th>Occupation Risk</th>
+                      <th>OA Risk</th>
+                      <th>OA Score</th>
+                      <th>Left IMU</th>
+                      <th>Right IMU</th>
+                      <th>Left FSR</th>
+                      <th>Right FSR</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dbTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </article>
+
+          <article class="report-actions-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Current screening</p>
+                <h2>Report preview</h2>
+              </div>
+            </div>
+            <div class="preview-list">
+              <div><span>Patient</span><strong id="previewPatient">OA-1027</strong></div>
+              <div><span>Risk score</span><strong id="previewRisk">0</strong></div>
+              <div><span>Status</span><strong id="previewLevel">Calculating</strong></div>
+              <div><span>Occupation</span><strong id="previewOccupation">Not selected</strong></div>
+              <div><span>Storage</span><strong>IndexedDB</strong></div>
+              <div><span>Report format</span><strong>HTML (print/save as PDF)</strong></div>
+            </div>
+          </article>
+        </section>
+
+        <section class="page architecture-page" id="page-architecture" data-page="architecture" hidden>
+          <article class="architecture-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Project flow</p>
+                <h2>Prototype pipeline</h2>
+              </div>
+            </div>
+            <ol class="pipeline">
+              <li><span>1</span>ESP32 reads MPU6050 and FSR values</li>
+              <li><span>2</span>BLE sends compact sensor packets to the PWA</li>
+              <li><span>3</span>Feature extraction compares gait and loading asymmetry</li>
+              <li><span>4</span>ML model estimates screening risk</li>
+              <li><span>5</span>Report is stored locally for offline use</li>
+            </ol>
+          </article>
+
+          <article class="architecture-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Technology stack</p>
+                <h2>Implementation modules</h2>
+              </div>
+            </div>
+            <div class="module-grid">
+              <div><strong>PWA UI</strong><span>HTML, CSS, JavaScript</span></div>
+              <div><strong>Hardware</strong><span>ESP32, MPU6050, FSR</span></div>
+              <div><strong>Transport</strong><span>BLE packets from ESP32</span></div>
+              <div><strong>ML</strong><span>Python trained model concept</span></div>
+              <div><strong>Storage</strong><span>IndexedDB reports</span></div>
+              <div><strong>Offline</strong><span>Service Worker cache</span></div>
+            </div>
+          </article>
+        </section>
+      </main>
+    </div>

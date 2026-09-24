@@ -1,0 +1,26 @@
+{
+  "name": "SmartOA Screening Console",
+  "short_name": "SmartOA",
+  "start_url": "./index.html#/overview",
+  "display": "standalone",
+  "background_color": "#f4f1eb",
+  "theme_color": "#176b67",
+  "icons": [
+    {
+      "src": "./02_Frontend/assets/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./02_Frontend/assets/images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "scope": "./",
+  "id": "./",
+  "orientation": "portrait-primary",
+  "description": "Offline-first SmartOA osteoarthritis screening console."
+}

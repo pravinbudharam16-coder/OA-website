@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>SmartOA Screening Console</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./02_Frontend/assets/css/styles.css?v=10" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Primary">
+        <div class="brand">
+          <img class="brand-logo" src="./02_Frontend/assets/images/smartoa-logo.png" alt="Osteoarthritis" />
+          <div class="brand-copy">
+            <strong>SmartOA</strong>
+            <span>Offline Screening</span>
+          </div>
+        </div>
+
+        <nav class="nav-list" id="pageNav">
+          <a class="active" href="#/overview" data-route="overview"><b>01</b><span>Overview</span><em aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.5V20h11V9.5"/></svg></em></a>
+          <a href="#/intake" data-route="intake"><b>02</b><span>Patient Intake</span><em aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></em></a>
+          <a href="#/sensors" data-route="sensors"><b>03</b><span>Sensors</span><em aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 15c3-6 5-6 8 0s5 6 8 0"/></svg></em></a>
+          <a href="#/occupation" data-route="occupation"><b>04</b><span>Occupation</span><em aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 5v4"/></svg></em></a>
+          <a href="#/screening" data-route="screening"><b>05</b><span>Risk Result</span><em aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M9 12h6"/></svg></em></a>
+          <a href="#/reports" data-route="reports"><b>06</b><span>Reports</span><em aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 4h12v16H6zM9 8h6M9 12h6M9 16h4"/></svg></em></a>
+          <a href="#/architecture" data-route="architecture"><b>07</b><span>Architecture</span><em aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="7" cy="7" r="2"/><circle cx="17" cy="7" r="2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M9 7h6M7 9v6M17 9v6M9 17h6"/></svg></em></a>
+        </nav>
+
+        <div class="connection-card">
+          <span class="status-dot"></span>
+          <div>
+            <strong id="connectionLabel">ESP32 not connected</strong>
+            <span>Real hardware • BLE</span>
+          </div>
+        </div>
+
+        <div class="worker-card" id="workerCard">
+          <div class="worker-avatar">HW</div>
+          <div class="worker-copy">
+            <strong id="workerName">Healthcare Worker</strong>
+            <span id="workerRole">Authorized user</span>
+          </div>
+          <button class="logout-button" id="logoutButton" type="button">Logout</button>
+        </div>
+      </aside>
+
+      <main>
+        <header class="topbar smartoa-header">
+          <div class="header-brand-title">
+            <p class="eyebrow">SmartOA offline screening</p>
+            <strong>SmartOA</strong>
+          </div>
+          <div class="top-actions">
+            <button class="install-topbar-button" id="installAppButton" type="button" aria-label="Install SmartOA" title="Install SmartOA">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11"/><path d="m8 10 4 4 4-4"/><path d="M5 18v2h14v-2"/></svg><span>Install</span>
+            </button>
+            <button class="icon-button small-icon notification-trigger" id="notificationButton" type="button" aria-label="Notifications" title="Notifications" aria-expanded="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 10a5.5 5.5 0 0 1 11 0c0 5 2 6 2 7H4.5c0-1 2-2 2-7Z"/><path d="M10 20h4"/></svg><span class="notification-dot" aria-hidden="true"></span>
+            </button>
+            <button class="icon-button small-icon" id="settingsButton" type="button" aria-label="Settings" title="Settings" aria-expanded="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg>
+            </button>
+            <div class="settings-popover" id="settingsPopover" hidden>
+              <strong>Settings</strong>
+              <span>Healthcare worker: <b id="settingsWorkerName">—</b></span>
+              <span>Mode: Offline-first</span>
+              <label class="language-control" for="languageSelect">Language
+                <select id="languageSelect" aria-label="Language">
+                  <option value="en">English</option>
+                  <option value="as">অসমীয়া</option>
+                  <option value="bn">বাংলা</option>
+                  <option value="brx">बड़ो</option>
+                  <option value="mni">ꯃꯤꯇꯩꯂꯣꯟ</option>
+                  <option value="kha">Khasi</option>
+                  <option value="lus">Mizo</option>
+                  <option value="grt">Garo</option>
+                  <option value="kok">Kokborok</option>
+                </select>
+              </label>
+              <button class="secondary-button compact" id="settingsLogout" type="button">Logout</button>
+            </div>
+          </div>
+          <div class="notification-bar" id="notificationBar" role="status" hidden>
+            <span class="notification-icon" aria-hidden="true">●</span>
+            <span id="notificationText">SmartOA is ready for offline screening.</span>
+            <button class="notification-delete" id="notificationClose" type="button" aria-label="Delete notification">Delete</button>
+          </div>
+        </header>
+
+        <section class="page overview-page" id="page-overview" data-page="overview">
+          <div class="module-header" data-module-header="overview"><div><p class="eyebrow">Healthcare worker dashboard</p><h1>Overview</h1></div><div class="screening-progress" data-progress="overview" aria-label="Screening progress"></div></div>
+          <article class="overview-hero">
+            <div>
+              <p class="eyebrow">Healthcare worker dashboard</p>
+              <h2>Welcome to SmartOA</h2>
+              <p>Offline-first screening workspace for collecting clinical, movement, and occupational information.</p>
+              <div class="hero-meta"><span class="live-pill"><i></i> Offline-ready</span><span>Multimodal screening</span><span>Local-first records</span></div>
+            </div>
+            <a class="primary-button overview-start" href="#/intake"><span>Start new screening</span></a>
+          </article>
+          <div class="overview-stat-grid" aria-label="SmartOA status summary">
+            <article class="stat-card"><div class="stat-icon teal">◉</div><div><span>Total screenings</span><strong id="overviewScreeningCount">0</strong></div><small>Saved on this device</small></article>
+            <article class="stat-card"><div class="stat-icon blue">↗</div><div><span>Latest risk</span><strong id="overviewLatestRisk">—</strong></div><small id="overviewLatestRiskMeta">No screening yet</small></article>
+            <article class="stat-card"><div class="stat-icon violet">⌁</div><div><span>Sensor status</span><strong id="overviewSensorStatus">Ready</strong></div><small id="overviewSensorMeta">Connect physical ESP32 / IMU / FSR hardware</small></article>
+            <article class="stat-card"><div class="stat-icon amber">✓</div><div><span>Workflow</span><strong id="overviewWorkflow">0 / 5</strong></div><small id="overviewWorkflowMeta">Start with patient intake</small></article>
+          </div>
+          <div class="workflow-card">
+            <div class="workflow-heading"><div><p class="eyebrow">Screening workflow</p><strong>Move through the modules in order</strong></div><span id="workflowPercent">0% complete</span></div>
+            <div class="workflow-track" aria-label="Screening workflow progress"><span id="workflowProgress"></span></div>
+            <div class="workflow-steps"><a href="#/intake"><b>1</b><span>Intake</span></a><a href="#/sensors"><b>2</b><span>Sensors</span></a><a href="#/occupation"><b>3</b><span>Occupation</span></a><a href="#/screening"><b>4</b><span>Risk</span></a><a href="#/reports"><b>5</b><span>Report</span></a></div>
+          </div>
+<div class="overview-insights">
+            <article class="overview-widget oa-marker-widget">
+              <div class="widget-heading">
+                <div><p class="eyebrow">Latest knee analysis • Interactive 3D risk view</p><h3>3D Knee Risk Analysis</h3></div>
+                <span class="chip" id="oaMarkerSource">No screening yet</span>
+              </div>
+              <div class="interactive-knee-layout">
+                <div class="interactive-knee-stage" id="kneeRiskStage" aria-label="Interactive knee risk visualization">
+                  <div class="visual-topline"><span>INTERACTIVE RISK VIEW</span><b>● AI overlay</b></div>
+                  <div class="knee-ring ring-a"></div><div class="knee-ring ring-b"></div><div class="knee-ring ring-c"></div>
+                  <div class="knee-3d-scene" id="knee3dScene" aria-label="3D latest knee analysis visualization">
+                    <div class="knee-3d-model">
+                      <div class="knee-femur-3d"><span></span></div>
+                      <div class="knee-joint-3d"><span></span></div>
+                      <div class="knee-tibia-3d"><span></span></div>
+                      <div class="knee-patella-3d"></div>
+                      <div class="knee-risk-overlay" id="kneeRiskOverlay"></div>
+                    </div>
+                    <div class="knee-3d-axis axis-3d-x"></div><div class="knee-3d-axis axis-3d-y"></div>
+                    <span class="knee-3d-label knee-3d-left">MEDIAL</span><span class="knee-3d-label knee-3d-right">LATERAL</span>
+                  </div>
+                  <svg class="knee-visual" viewBox="0 0 420 520" role="img" aria-label="Stylized front view of knee loading and osteoarthritis risk markers">
+                    <g>
+                      <path class="knee-bone femur" d="M175 40 C172 94 177 141 174 188 C171 218 152 231 143 251 C134 271 139 297 156 311 L177 322 C184 296 186 272 210 258 C234 272 236 296 243 322 L264 311 C281 297 286 271 277 251 C268 231 249 218 246 188 C243 141 248 94 245 40 Z"/>
+                      <path class="knee-bone tibia" d="M164 319 C170 351 168 390 159 468 C157 487 168 500 186 502 L234 502 C252 500 263 487 261 468 C252 390 250 351 256 319 C240 329 225 335 210 335 C195 335 180 329 164 319 Z"/>
+                      <ellipse class="patella" cx="210" cy="276" rx="58" ry="64"/>
+                      <path class="load-zone medial-left" d="M155 235 C132 248 125 276 136 302 C141 315 150 325 160 333 C169 320 176 306 179 291 C171 274 163 254 155 235 Z" data-marker="Medial load" tabindex="0"/>
+                      <path class="load-zone medial-right" d="M265 235 C288 248 295 276 284 302 C279 315 270 325 260 333 C251 320 244 306 241 291 C249 274 257 254 265 235 Z" data-marker="Lateral load" tabindex="0"/>
+                      <circle class="hotspot hotspot-load" cx="157" cy="277" r="10" data-marker="Medial load" tabindex="0"/>
+                      <circle class="hotspot hotspot-joint" cx="210" cy="225" r="10" data-marker="Joint-space region" tabindex="0"/>
+                      <circle class="hotspot hotspot-motion" cx="263" cy="277" r="10" data-marker="Movement marker" tabindex="0"/>
+                    </g>
+                  </svg>
+                  <div class="visual-callout callout-right"><small>RISK MARKER</small><strong id="kneeMarkerTitle">Medial load</strong></div>
+                  <div class="visual-callout callout-left"><small>RISK SCORE</small><strong id="oaMarkerRisk">—</strong></div>
+                  <div class="visual-inspect">Select a marker to inspect</div>
+                </div>
+                <div class="interactive-knee-info">
+                  <div class="marker-risk-card"><span id="kneeMarkerEyebrow">Selected marker</span><strong id="kneeMarkerDetail">Medial loading</strong><small id="oaMarkerRiskMeta">Complete a screening to show the latest result.</small></div>
+                  <div class="marker-points interactive-marker-list">
+                    <button type="button" class="marker-select active" data-marker="Medial load"><i></i><span>Medial loading</span><b>Inspect</b></button>
+                    <button type="button" class="marker-select" data-marker="Joint-space region"><i></i><span>Joint-space region</span><b>Inspect</b></button>
+                    <button type="button" class="marker-select" data-marker="Movement marker"><i></i><span>Movement pattern</span><b>Inspect</b></button>
+                  </div>
+                  <p class="marker-note">Interactive educational visualization for screening context; it is not a diagnostic X-ray.</p>
+                </div>
+              </div>
+            </article>
+            <article class="overview-widget recent-widget">
+              <div class="widget-heading"><div><p class="eyebrow">History</p><h3>Recent Screening</h3></div><a href="#/reports" class="widget-link">View all</a></div>
+              <div id="recentScreenings" class="recent-screenings"><div class="empty-state">No recent screenings yet.</div></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="page dashboard-grid" id="page-intake" data-page="intake">
+          <div class="module-header" data-module-header="intake"><div><p class="eyebrow">Patient assessment</p><h1>Patient Intake</h1></div><div class="screening-progress" data-progress="intake" aria-label="Screening progress"></div></div>
+          <article class="assessment-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Clinical context</h2>
+              </div>
+              <span class="chip">Required inputs</span>
+            </div>
+
+            <form class="intake-form" id="intakeForm">
+              <label>
+                Patient ID
+                <input id="patientId" type="text" value="" autocomplete="off" required />
+              </label>
+              <label>
+                Patient Name
+                <input id="patientName" type="text" value="" autocomplete="name" required />
+              </label>
+              <label>
+                Age
+                <input id="age" type="number" min="18" max="100" value="" required />
+              </label>
+              <label>
+                Height (cm)
+                <input id="height" type="number" min="100" max="250" step="0.1" value="" required />
+              </label>
+              <label>
+                Weight (kg)
+                <input id="weight" type="number" min="20" max="300" step="0.1" value="" required />
+              </label>
+              <label>
+                BMI (calculated)
+                <input id="bmi" type="number" min="8" max="80" step="0.1" value="" readonly required aria-readonly="true" />
+              </label>
+              <label>
+                Gender
+                <select id="gender" required>
+                  <option value="" selected disabled>Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </label>
+              <label>
+                Knee pain
+                <select id="pain" required>
+                  <option value="" selected disabled>Select pain level</option>
+                  <option value="1">Mild</option>
+                  <option value="2">Moderate</option>
+                  <option value="3">Severe</option>
+                </select>
+              </label>
+              <label>
+                Pain duration (days)
+                <input id="painDurationDays" type="number" min="0" max="36500" step="1" value="" required />
+              </label>
+              <label>
+                Mobility limit
+                <select id="mobility" required>
+                  <option value="" selected disabled>Select mobility issue</option>
+                  <option value="0">Low</option>
+                  <option value="1">Medium</option>
+                  <option value="2">High</option>
+                </select>
+              </label>
+              <div class="form-actions full-width">
+                <button class="primary-button" type="submit">Submit patient information</button>
+              </div>
+            </form>
+            <p class="submit-status" id="intakeSubmitStatus" role="status" aria-live="polite"></p>
+
+  
+          </article>
+
+
+        </section>
+
+        <section class="page dashboard-grid" id="page-screening" data-page="screening" hidden>
+          <div class="module-header" data-module-header="screening"><div><p class="eyebrow">AI-assisted analysis</p><h1>Risk Result</h1></div><div class="screening-progress" data-progress="screening" aria-label="Screening progress"></div></div>
+          <article class="risk-panel">
+            <div class="risk-meter" aria-label="OA risk score">
+              <svg viewBox="0 0 160 160" role="img" aria-labelledby="riskTitle">
+                <title id="riskTitle">OA risk score</title>
+                <circle class="meter-bg" cx="80" cy="80" r="64"></circle>
+                <circle class="risk-stage risk-stage-low" cx="80" cy="80" r="64"></circle>
+                <circle class="risk-stage risk-stage-moderate" cx="80" cy="80" r="64"></circle>
+                <circle class="risk-stage risk-stage-high" cx="80" cy="80" r="64"></circle>
+                <circle class="meter-value" id="meterValue" cx="80" cy="80" r="64"></circle>
+              </svg>
+              <div class="risk-center">
+                <strong id="riskScore">0</strong>
+                <span id="riskLevel">Calculating</span>
+              </div>
+            </div>
+            <div class="risk-copy">
+              <h2>Screening result</h2>
+              <p id="riskSummary">Combining symptoms, BMI, gait asymmetry, foot loading imbalance and occupation.</p>
+              <div class="factor-list" id="factorList"></div>
+              <div class="page-actions">
+                <button class="primary-button" id="saveReportInline" type="button">Save &amp; Download PDF report</button>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="page sensor-layout" id="page-sensors" data-page="sensors" hidden>
+          <div class="module-header" data-module-header="sensors"><div><p class="eyebrow">Movement &amp; loading</p><h1>Sensors</h1></div><div class="screening-progress" data-progress="sensors" aria-label="Screening progress"></div></div>
+          <article class="body-map-panel interactive-sensor-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Interactive sensor placement</p>
+                <h2>2 IMU + 2 FSR • Physical hardware</h2>
+              </div>
+            </div>
+            <div class="sensor-placement-layout">
+              <div class="sensor-placement-stage" id="sensorPlacementStage" aria-label="Interactive sensor placement guide">
+                <div class="visual-topline"><span>HARDWARE FIT GUIDE</span><b>● PHYSICAL SENSORS</b></div>
+                <div class="placement-grid"></div>
+                <svg class="sensor-placement-visual" viewBox="0 0 520 420" role="img" aria-label="Lower-leg and shoe sensor placement">
+                  
+                  <g class="leg-silhouette">
+                    <path d="M208 48 C202 86 203 125 199 164 C195 201 181 225 177 254 L170 316 C168 335 178 346 197 347 L231 347 C250 346 260 335 258 316 L251 254 C247 225 233 201 229 164 C225 125 226 86 220 48 Z" fill="#e9e3d7"/>
+                    <path d="M171 319 C146 322 115 327 92 337 C75 345 73 359 87 365 L231 365 C247 365 256 356 254 344 C251 330 238 322 224 319 Z" fill="#cfd7d5"/>
+                    <path d="M171 319 C147 322 116 327 92 337" fill="none" stroke="#71858b" stroke-width="3"/>
+                    <path d="M208 48 L208 319" stroke="#d2c2ad" stroke-width="2" stroke-dasharray="6 7" opacity=".55"/>
+                  </g>
+                  <g class="sensor-hotspot imu-hotspot" data-sensor="Left IMU" tabindex="0" role="button" aria-label="Left IMU placement">
+                    <rect x="166" y="202" width="66" height="34" rx="8"/>
+                    <circle cx="177" cy="219" r="5"/><circle cx="221" cy="219" r="5"/>
+                    <text x="199" y="224">IMU</text>
+                  </g>
+                  <g class="sensor-hotspot fsr-hotspot" data-sensor="Left FSR" tabindex="0" role="button" aria-label="Left FSR placement">
+                    <rect x="128" y="327" width="72" height="18" rx="8"/>
+                    <text x="164" y="340">FSR</text>
+                  </g>
+                  <g class="sensor-hotspot right-sensor" data-sensor="Right IMU" tabindex="0" role="button" aria-label="Right IMU placement">
+                    <rect x="290" y="202" width="66" height="34" rx="8"/>
+                    <text x="323" y="224">IMU</text>
+                  </g>
+                  <g class="sensor-hotspot right-sensor" data-sensor="Right FSR" tabindex="0" role="button" aria-label="Right FSR placement">
+                    <rect x="319" y="327" width="72" height="18" rx="8"/>
+                    <text x="355" y="340">FSR</text>
+                  </g>
+                  <text class="placement-guide-label" x="92" y="192">OUTER SHANK</text>
+                  <text class="placement-guide-label" x="94" y="387">INSIDE SHOE / INSOLE</text>
+                </svg>
+                <div class="visual-callout sensor-callout"><small id="sensorPlacementType">SENSOR</small><strong id="sensorPlacementTitle">Left IMU</strong><span id="sensorPlacementHint">Outer side of lower leg, below the knee</span></div>
+                <div class="visual-inspect">Select a sensor to inspect</div>
+              </div>
+              <div class="sensor-placement-info">
+                <div class="sensor-detail-card"><span id="sensorDetailLabel">Selected sensor</span><strong id="sensorDetailName">Left IMU</strong><small id="sensorDetailValue">0.00 g</small><p id="sensorDetailText">Attach the MPU6050 firmly to the outer side of the lower leg, below the knee joint.</p></div>
+                <div class="sensor-choice-list">
+                  <button type="button" class="sensor-choice active" data-sensor="Left IMU"><i></i><span>Left IMU</span><b>Shank</b></button>
+                  <button type="button" class="sensor-choice" data-sensor="Right IMU"><i></i><span>Right IMU</span><b>Shank</b></button>
+                  <button type="button" class="sensor-choice" data-sensor="Left FSR"><i></i><span>Left FSR</span><b>Insole</b></button>
+                  <button type="button" class="sensor-choice" data-sensor="Right FSR"><i></i><span>Right FSR</span><b>Insole</b></button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="telemetry-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Live telemetry</p>
+                <h2>Physical sensor telemetry</h2><p class="panel-note">Connect the ESP32 over Bluetooth to capture real MPU6050 and FSR readings. No simulated sensor values are generated.</p>
+              </div>
+              <div class="sensor-controls"><span id="streamState" class="chip">Hardware disconnected</span><button class="primary-button compact" id="startStream" type="button">Connect ESP32</button><button class="secondary-button compact" id="stopStream" type="button" hidden>Stop capture</button><button class="secondary-button compact" id="exitStream" type="button" hidden>Disconnect</button><button class="secondary-button compact" id="resetSensors" type="button">Reset readings</button></div>
+            </div>
+
+            <section class="sensor-telemetry-section imu-telemetry-section" aria-labelledby="imuTelemetryTitle">
+              <div class="sensor-section-heading">
+                <div><p class="eyebrow">IMU sensors</p><h3 id="imuTelemetryTitle">Accelerometer &amp; Gyroscope</h3></div>
+                <span class="chip">MPU6050 × 2</span>
+              </div>
+              <div class="metric-grid sensor-reading-grid imu-reading-grid">
+                <div class="metric"><span>Left accelerometer</span><strong id="leftImu">0.00 g</strong><small id="leftImuAxes">X 0.00 • Y 0.00 • Z 0.00 g</small></div>
+                <div class="metric"><span>Right accelerometer</span><strong id="rightImu">0.00 g</strong><small id="rightImuAxes">X 0.00 • Y 0.00 • Z 0.00 g</small></div>
+                <div class="metric"><span>Left gyroscope</span><strong id="leftGyro">0.0 °/s</strong><small id="leftGyroAxes">X 0.0 • Y 0.0 • Z 0.0 °/s</small></div>
+                <div class="metric"><span>Right gyroscope</span><strong id="rightGyro">0.0 °/s</strong><small id="rightGyroAxes">X 0.0 • Y 0.0 • Z 0.0 °/s</small></div>
+              </div>
+            </section>
+
+            <section class="sensor-telemetry-section pressure-telemetry-section" aria-labelledby="pressureTelemetryTitle">
+              <div class="sensor-section-heading">
+                <div><p class="eyebrow">Pressure sensors</p><h3 id="pressureTelemetryTitle">Foot Loading / FSR</h3></div>
+                <span class="chip">FSR × 2</span>
+              </div>
+              <div class="metric-grid sensor-reading-grid pressure-reading-grid">
+                <div class="metric"><span>Left pressure sensor</span><strong id="leftFsr">0 ADC</strong><small id="leftFsrMeta">Raw pressure reading: 0 • 0.00 V</small></div>
+                <div class="metric"><span>Right pressure sensor</span><strong id="rightFsr">0 ADC</strong><small id="rightFsrMeta">Raw pressure reading: 0 • 0.00 V</small></div>
+              </div>
+            </section>
+
+            <section class="sensor-trend-section imu-trend-section" aria-labelledby="imuTrendTitle">
+              <div class="sensor-section-heading"><div><p class="eyebrow">IMU trend</p><h3 id="imuTrendTitle">Accelerometer &amp; gyroscope trends</h3></div><span class="chip">MPU6050 × 2</span></div>
+              <div class="sensor-trend-grid">
+                <div class="sensor-chart-card"><h4>Accelerometer magnitude</h4><canvas id="imuAccelChart" width="900" height="240" aria-label="IMU accelerometer trend chart"></canvas></div>
+                <div class="sensor-chart-card"><h4>Gyroscope angular speed</h4><canvas id="imuGyroChart" width="900" height="240" aria-label="IMU gyroscope trend chart"></canvas></div>
+              </div>
+            </section>
+
+            <section class="sensor-trend-section pressure-trend-section" aria-labelledby="pressureTrendTitle">
+              <div class="sensor-section-heading"><div><p class="eyebrow">Pressure trend</p><h3 id="pressureTrendTitle">Left &amp; right FSR pressure readings</h3></div><span class="chip">FSR × 2</span></div>
+              <div class="sensor-chart-card"><h4>Foot-loading trend</h4><canvas id="pressureChart" width="900" height="240" aria-label="FSR pressure trend chart"></canvas></div>
+            </section>
+          </article>
+        </section>
+
+        <section class="page occupation-page" id="page-occupation" data-page="occupation" hidden>
+          <div class="module-header" data-module-header="occupation"><div><p class="eyebrow">Risk context</p><h1>Occupation</h1></div><div class="screening-progress" data-progress="occupation" aria-label="Screening progress"></div></div>
+          <article class="occupation-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Work activity</p>
+                <h2>Occupation assessment</h2>
+              </div>
+            </div>
+            <form class="intake-form" id="occupationForm">
+              <label>
+                Occupation type
+                <select id="occupationType" required>
+                  <option value="">Select occupation</option>
+                  <option value="sedentary">Sedentary (desk work)</option>
+                  <option value="light">Light activity (standing, walking)</option>
+                  <option value="moderate">Moderate activity (manual labor)</option>
+                  <option value="heavy">Heavy activity (construction, farming)</option>
+                  <option value="athletic">Athletic (sports, training)</option>
+                </select>
+              </label>
+              <label>
+                Daily standing hours
+                <input id="standingHours" type="number" min="0" max="16" step="0.5" value="" required />
+              </label>
+              <label>
+                Lifting frequency
+                <select id="liftingFreq" required>
+                  <option value="0">Never</option>
+                  <option value="1">Rarely (1-2x/week)</option>
+                  <option value="2">Occasionally (3-5x/week)</option>
+                  <option value="3">Frequently (daily)</option>
+                  <option value="4">Constantly (multiple times/day)</option>
+                </select>
+              </label>
+              <label>
+                Repetitive movements
+                <select id="repetitiveMovements" required>
+                  <option value="0">None</option>
+                  <option value="1">Low</option>
+                  <option value="2">Moderate</option>
+                  <option value="3">High</option>
+                </select>
+              </label>
+              <div class="form-actions full-width">
+                <button class="primary-button" type="submit">Submit occupation information</button>
+              </div>
+            </form>
+            <p class="submit-status" id="occupationSubmitStatus" role="status" aria-live="polite"></p>
+          </article>
+
+          <article class="occupation-risk-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Risk factor</p>
+                <h2>Occupational impact</h2>
+              </div>
+            </div>
+            <div class="occupation-summary">
+              <p id="occupationSummary">Select occupation details to assess occupational risk factors for osteoarthritis.</p>
+              <div class="occupation-factors" id="occupationFactors"></div>
+            </div>
+          </article>
+        </section>
+
+        <section class="page reports-page" id="page-reports" data-page="reports" hidden>
+          <div class="module-header" data-module-header="reports"><div><p class="eyebrow">Patient screening records</p><h1>Reports</h1></div><div class="screening-progress" data-progress="reports" aria-label="Screening progress"></div></div>
+          <article class="reports-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Local database</p>
+                <h2>Patient records</h2>
+              </div>
+              <span class="chip" id="dbRecordCount">0 records</span>
+            </div>
+            <div class="local-db-wrap">
+              <div class="local-db-heading">
+
+              </div>
+              <div class="table-scroll">
+                <table class="local-db-table">
+                  <thead>
+                    <tr>
+                      <th>Date &amp; Time</th>
+                      <th>Patient ID</th>
+                      <th>Name</th>
+                      <th>Age</th>
+                      <th>Height (cm)</th>
+                      <th>Weight (kg)</th>
+                      <th>BMI</th>
+                      <th>Gender</th>
+                      <th>Knee Pain</th>
+                      <th>Pain Duration (days)</th>
+                      <th>Mobility Issue</th>
+                      <th>Occupation</th>
+                      <th>Occupation Risk</th>
+                      <th>OA Risk</th>
+                      <th>OA Score</th>
+                      <th>Left IMU</th>
+                      <th>Right IMU</th>
+                      <th>Left FSR</th>
+                      <th>Right FSR</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dbTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </article>
+
+          <article class="report-actions-panel" id="reportPreviewPanel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Current screening</p>
+                <h2>Report preview</h2>
+              </div>
+            </div>
+            <div id="fullReportPreview" class="full-report-preview">
+              <div class="preview-list">
+                <div><span>Patient</span><strong id="previewPatient">OA-1027</strong></div>
+                <div><span>Risk score</span><strong id="previewRisk">0</strong></div>
+                <div><span>Status</span><strong id="previewLevel">Calculating</strong></div>
+                <div><span>Occupation</span><strong id="previewOccupation">Not selected</strong></div>
+              </div>
+              <p class="preview-empty-note">Select View beside a patient record to display the complete screening report.</p>
+            </div>
+          </article>
+        </section>
+
+        <section class="page architecture-page" id="page-architecture" data-page="architecture" hidden>
+          <div class="module-header" data-module-header="architecture"><div><p class="eyebrow">System design</p><h1>Architecture</h1></div><div class="screening-progress" data-progress="architecture" aria-label="Screening progress"></div></div>
+          <article class="architecture-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Project flow</p>
+                <h2>Prototype pipeline</h2>
+              </div>
+            </div>
+            <ol class="pipeline">
+              <li><span>1</span>ESP32 reads MPU6050 and FSR values</li>
+              <li><span>2</span>BLE sends compact sensor packets to the PWA</li>
+              <li><span>3</span>Feature extraction compares gait and loading asymmetry</li>
+              <li><span>4</span>ML model estimates screening risk</li>
+              <li><span>5</span>Report is stored locally for offline use</li>
+            </ol>
+          </article>
+
+          <article class="architecture-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Technology stack</p>
+                <h2>Implementation modules</h2>
+              </div>
+            </div>
+            <div class="module-grid">
+              <div><strong>PWA UI</strong><span>HTML, CSS, JavaScript</span></div>
+              <div><strong>Hardware</strong><span>ESP32, MPU6050, FSR</span></div>
+              <div><strong>Transport</strong><span>BLE packets from ESP32</span></div>
+              <div><strong>ML</strong><span>Python trained model concept</span></div>
+              <div><strong>Storage</strong><span>IndexedDB reports</span></div>
+              <div><strong>Offline</strong><span>Service Worker cache</span></div>
+            </div>
+          </article>
+        </section>
+      </main>
+    </div>
+
+        <footer class="site-footer">
+          <span>SmartOA · Offline-first screening workspace</span>
+          <nav aria-label="Legal">
+            <a href="./privacy.html">Privacy Policy <small>(draft for review)</small></a>
+            <a href="./terms.html">Terms of Service <small>(draft for review)</small></a>
+          </nav>
+        </footer>
+
+    <script src="./02_Frontend/assets/js/app.js?v=9"></script>
+  </body>
+</html>
