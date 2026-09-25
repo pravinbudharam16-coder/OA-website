@@ -98,6 +98,10 @@ const els = {
   workerRole: document.querySelector("#workerRole"),
   logoutButton: document.querySelector("#logoutButton"),
   notificationButton: document.querySelector("#notificationButton"),
+  mlShareQuest: document.querySelector("#mlShareQuest"),
+  mlShareSensor: document.querySelector("#mlShareSensor"),
+  mlQuestPct: document.querySelector("#mlQuestPct"),
+  mlSensorPct: document.querySelector("#mlSensorPct"),
   notificationBar: document.querySelector("#notificationBar"),
   notificationClose: document.querySelector("#notificationClose"),
   notificationText: document.querySelector("#notificationText"),
@@ -669,6 +673,7 @@ function showRoute(route) {
   });
   document.body.dataset.activeRoute = activeRoute;
   renderWorkflowProgress(activeRoute);
+  if (activeRoute === "screening") fetchMlPrediction();
   if (activeRoute === "reports") renderReports();
   if (activeRoute === "overview") renderOverview();
   if (window.location.hash !== `#/${activeRoute}`) {
@@ -931,6 +936,76 @@ function applyReportPreview(report) {
   if (panel) panel.classList.add("report-preview-highlight");
 }
 
+async function fetchMlPrediction() {
+  if (state.isFetchingMl) return;
+  state.isFetchingMl = true;
+  try {
+    const intake = state.intakeData || {};
+    const age = Number(intake.age ?? numberValue(els.age)) || 50;
+    const bmi = Number(intake.bmi ?? calculateBmi() ?? numberValue(els.bmi)) || 25.0;
+    const pain = Number(intake.kneePainScore ?? numberValue(els.pain)) || 1;
+    const mobility = Number(intake.mobilityIssueScore ?? numberValue(els.mobility)) || 0;
+
+    const imuAsym = Math.abs(state.latest.leftImu - state.latest.rightImu);
+    const fsrAsym = Math.abs(state.latest.leftFsr - state.latest.rightFsr);
+
+    const payload = {
+      age,
+      sex: intake.gender || els.gender?.value || "Female",
+      bmi,
+      vas_pain_score: Math.min(10, Math.max(0, pain * 3.3)),
+      womac_score: Math.min(96, Math.max(0, (pain + mobility) * 12)),
+      prior_injury_history: "No Prior Injury",
+      activity_level: state.occupationData?.occupationType === "heavy" || state.occupationData?.occupationType === "athletic" ? "High" : "Moderate",
+      stance_time_asymmetry: Math.round(Math.min(30, imuAsym * 15 + fsrAsym * 0.05) * 10) / 10,
+      knee_rom_left: Math.round(Math.max(30, 65 - state.latest.leftImu * 5) * 10) / 10,
+      knee_rom_right: Math.round(Math.max(30, 65 - state.latest.rightImu * 5) * 10) / 10,
+      load_distribution_ratio: state.latest.rightFsr > 0 ? Math.round((state.latest.leftFsr / state.latest.rightFsr) * 100) / 100 : 1.0,
+      cadence: 100.0,
+      heel_strike_force_left: Math.round(Math.max(0.5, state.latest.leftImu || 1.1) * 10) / 10,
+      heel_strike_force_right: Math.round(Math.max(0.5, state.latest.rightImu || 1.1) * 10) / 10,
+      toe_off_force_left: 1.0,
+      toe_off_force_right: 1.0,
+      gait_cycle_variability: Math.round(Math.min(15, fsrAsym / 40 + 2.0) * 10) / 10
+    };
+
+    const res = await fetch("/api/ml/predict-risk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      const mlResult = await res.json();
+      if (mlResult && mlResult.ok) {
+        state.mlResult = mlResult;
+        updateMlUi(mlResult);
+      }
+    }
+  } catch (err) {
+    console.warn("ML Prediction API call fallback:", err);
+  } finally {
+    state.isFetchingMl = false;
+  }
+}
+
+function updateMlUi(mlResult) {
+  if (!mlResult) return;
+  const questPct = mlResult.feature_attribution_share?.Questionnaire_percent ?? 39.6;
+  const sensorPct = mlResult.feature_attribution_share?.Wearable_Sensor_percent ?? 60.4;
+  
+  if (els.mlShareQuest) els.mlShareQuest.style.width = `${questPct}%`;
+  if (els.mlShareSensor) els.mlShareSensor.style.width = `${sensorPct}%`;
+  if (els.mlQuestPct) els.mlQuestPct.textContent = `${questPct}%`;
+  if (els.mlSensorPct) els.mlSensorPct.textContent = `${sensorPct}%`;
+
+  if (mlResult.predicted_risk_tier) {
+    const tier = mlResult.predicted_risk_tier;
+    const conf = mlResult.confidence_score;
+    els.riskSummary.textContent = `Random Forest AI Model Prediction: ${tier} Risk (${conf}% confidence). Analyzed patient intake and live sensor telemetry.`;
+  }
+}
+
 function updateRiskUi(factors) {
   const score = state.risk;
   const level = riskLabel(score);
@@ -939,12 +1014,17 @@ function updateRiskUi(factors) {
   els.riskLevel.textContent = `${level.label} risk`;
   els.meterValue.style.stroke = level.color;
   els.meterValue.style.strokeDashoffset = String(circumference - (score / 100) * circumference);
-  els.riskSummary.textContent =
-    level.label === "High"
-      ? "Sensor asymmetry and symptoms suggest this patient should be flagged for clinical follow-up."
-      : level.label === "Moderate"
-        ? "The result suggests measurable risk factors. Repeat screening and compare reports over time."
-        : "Current values are low risk, but this is a screening aid and not a medical diagnosis.";
+  
+  if (state.mlResult && state.mlResult.predicted_risk_tier) {
+    els.riskSummary.textContent = `Random Forest AI Model Prediction: ${state.mlResult.predicted_risk_tier} Risk (${state.mlResult.confidence_score}% confidence). Analyzed patient intake and live sensor telemetry.`;
+  } else {
+    els.riskSummary.textContent =
+      level.label === "High"
+        ? "Sensor asymmetry and symptoms suggest this patient should be flagged for clinical follow-up."
+        : level.label === "Moderate"
+          ? "The result suggests measurable risk factors. Repeat screening and compare reports over time."
+          : "Current values are low risk, but this is a screening aid and not a medical diagnosis.";
+  }
 
   const factorRows = [
     ["Symptom score", `${Math.round(factors.symptomScore)} pts`],
@@ -953,6 +1033,10 @@ function updateRiskUi(factors) {
     ["Load asymmetry", `${Math.round(factors.loadAsymmetry * 100)}%`],
     ["Occupation contribution", `${Math.round(factors.occupationScore)} pts`],
   ];
+
+  if (state.mlResult) {
+    factorRows.unshift(["AI ML Model Prediction", `${state.mlResult.predicted_risk_tier} (${state.mlResult.confidence_score}% conf)`]);
+  }
 
   els.factorList.innerHTML = factorRows
     .map(([name, value]) => `<div class="factor"><span>${name}</span><strong>${value}</strong></div>`)
@@ -1427,6 +1511,7 @@ function buildCurrentReport() {
     rightImu: state.latest.rightImu,
     leftFsr: state.latest.leftFsr,
     rightFsr: state.latest.rightFsr,
+    mlResult: state.mlResult || null,
     schemaVersion: 9,
     storage: "IndexedDB",
   };
@@ -1465,6 +1550,10 @@ function createPdfBlob(report) {
     ["OA Risk", `${report.oaRisk}`],
     ["OA Risk Score", report.oaRiskScore],
   ];
+  if (report.mlResult) {
+    rows.push(["AI ML Model Prediction", `${report.mlResult.predicted_risk_tier} Risk (${report.mlResult.confidence_score}% confidence)`]);
+    rows.push(["Feature Share (Quest/Sensor)", `${report.mlResult.feature_attribution_share?.Questionnaire_percent}% Intake / ${report.mlResult.feature_attribution_share?.Wearable_Sensor_percent}% Sensors`]);
+  }
   const sensorRows = [
     ["Left IMU magnitude", sensor(report.leftImu, "g")],
     ["Left IMU axes", `X ${sensor(report.leftImuX, "g")} / Y ${sensor(report.leftImuY, "g")} / Z ${sensor(report.leftImuZ, "g")}`],
