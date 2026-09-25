@@ -1150,3 +1150,161 @@ main { min-width: 0; padding: 0 34px 34px; }
 .knee-3d-left { left:18%; }.knee-3d-right { right:18%; }
 .interactive-knee-stage.latest-analysis .knee-visual { display:none; }
 @media (max-width: 760px) { .knee-3d-model { transform:rotateX(7deg) rotateY(-10deg) scale(.86); } .knee-3d-scene { inset-inline:2%; } }
+
+/* ML Model Evaluation & Feature Importance Dashboard Styles */
+.ml-dashboard-card {
+  margin-top: 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+.ml-dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.ml-dashboard-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+.ml-model-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #e6f4f1;
+  color: #0f766e;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.ml-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+@media (max-width: 860px) {
+  .ml-grid-2 { grid-template-columns: 1fr; }
+}
+.ml-metric-box {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+}
+.ml-metric-box h4 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.ml-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px stroke var(--line);
+  font-size: 14px;
+}
+.ml-stat-row:last-child { border-bottom: none; }
+.ml-stat-row strong { font-weight: 700; color: var(--text); }
+.ml-share-bar {
+  height: 12px;
+  width: 100%;
+  background: #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  margin: 12px 0 8px;
+}
+.ml-share-quest { background: #2b5c8f; transition: width 0.4s ease; }
+.ml-share-sensor { background: #0f766e; transition: width 0.4s ease; }
+.ml-share-legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+}
+.ml-legend-item { display: flex; align-items: center; gap: 6px; }
+.ml-dot-quest { width: 10px; height: 10px; border-radius: 50%; background: #2b5c8f; }
+.ml-dot-sensor { width: 10px; height: 10px; border-radius: 50%; background: #0f766e; }
+
+/* Confusion Matrix Table */
+.cm-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+  margin-top: 10px;
+}
+.cm-table th, .cm-table td {
+  padding: 10px;
+  border: 1px solid var(--line);
+  font-size: 13px;
+}
+.cm-table th {
+  background: var(--bg);
+  font-weight: 700;
+}
+.cm-cell-match {
+  background: #e6f4f1;
+  color: #0f766e;
+  font-weight: 800;
+  font-size: 15px;
+}
+.cm-cell-zero {
+  color: #94a3b8;
+}
+
+/* Feature importance list */
+.fi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+.fi-item {
+  display: grid;
+  grid-template-columns: 180px 1fr 60px;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+@media (max-width: 600px) {
+  .fi-item { grid-template-columns: 130px 1fr 50px; }
+}
+.fi-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fi-bar-container {
+  height: 8px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.fi-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+.fi-bar-fill.quest { background: #2b5c8f; }
+.fi-bar-fill.sensor { background: #0f766e; }
+.fi-pct {
+  font-weight: 700;
+  text-align: right;
+  font-size: 12px;
+  color: var(--text);
+}
+

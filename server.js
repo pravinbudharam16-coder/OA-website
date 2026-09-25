@@ -2,6 +2,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const { spawn } = require("child_process");
 
 const root = __dirname;
 const port = positiveInt(process.env.PORT, 4173);
@@ -39,7 +40,7 @@ const PUBLIC_PATHS = new Set([
 
 const AUTH_ROUTES = new Set(["POST /api/login"]);
 const PUBLIC_API_ROUTES = new Set(["GET /api/session"]);
-const AUTHENTICATED_API_ROUTES = new Set(["POST /api/logout"]);
+const AUTHENTICATED_API_ROUTES = new Set(["POST /api/logout", "GET /api/ml/model-stats", "POST /api/ml/predict-risk"]);
 const LOG_DIR = path.join(root, "logs");
 const SECURITY_LOG = path.join(LOG_DIR, "security.log");
 
@@ -318,6 +319,58 @@ http.createServer(async (req, res) => {
     if (req.method === "POST" && requestPath === "/api/logout") {
       if (session) sessions.delete(session.token);
       sendJson(res, 200, { ok: true }, { "Set-Cookie": "smartoa_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0" });
+      return;
+    }
+
+    if (req.method === "GET" && requestPath === "/api/ml/model-stats") {
+      const statsFile = path.join(root, "04_Data", "model_eval_results.json");
+      fs.readFile(statsFile, "utf8", (err, data) => {
+        if (err) {
+          sendJson(res, 500, { ok: false, message: "Model statistics unavailable." });
+          return;
+        }
+        try {
+          const stats = JSON.parse(data);
+          sendJson(res, 200, { ok: true, stats });
+        } catch (e) {
+          sendJson(res, 500, { ok: false, message: "Invalid model statistics format." });
+        }
+      });
+      return;
+    }
+
+    if (req.method === "POST" && requestPath === "/api/ml/predict-risk") {
+      let reqBody;
+      try { reqBody = await requestBody(req); }
+      catch (error) {
+        sendJson(res, error.statusCode || 400, { ok: false, message: error.publicMessage || "Invalid payload." });
+        return;
+      }
+      
+      const scriptPath = path.join(root, "07_ML_Model", "predict_knee_oa.py");
+      const pyProcess = spawn("python", [scriptPath]);
+      let stdoutData = "";
+      let stderrData = "";
+      
+      pyProcess.stdout.on("data", (chunk) => { stdoutData += chunk.toString("utf8"); });
+      pyProcess.stderr.on("data", (chunk) => { stderrData += chunk.toString("utf8"); });
+      
+      pyProcess.on("close", (code) => {
+        if (code !== 0) {
+          logSecurity("error", "ML prediction script error", { stderr: stderrData });
+          sendJson(res, 500, { ok: false, message: "ML inference failed." });
+          return;
+        }
+        try {
+          const result = JSON.parse(stdoutData.trim());
+          sendJson(res, 200, result);
+        } catch (e) {
+          sendJson(res, 500, { ok: false, message: "Failed to parse prediction output." });
+        }
+      });
+      
+      pyProcess.stdin.write(JSON.stringify(reqBody));
+      pyProcess.stdin.end();
       return;
     }
 
