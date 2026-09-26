@@ -1,4 +1,4 @@
-const cacheName = "smartoa-ui-v20-organized-project";
+const cacheName = "smartoa-ui-v21-no-architecture";
 const assets = [
   "./login.html",
   "./02_Frontend/assets/css/login.css",
