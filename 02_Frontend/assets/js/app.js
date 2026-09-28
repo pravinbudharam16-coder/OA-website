@@ -6,6 +6,12 @@ const state = {
   hardwareCharacteristic: null,
   packetBuffer: "",
   sampleCount: 0,
+  sensorQuality: {
+    validSamples: 0,
+    invalidSamples: 0,
+    lastMissingFields: [],
+    lastPacketAt: null,
+  },
   tick: 0,
   history: Array.from({ length: 48 }, () => ({
     leftImu: 0,
@@ -684,6 +690,17 @@ const BLE_CONFIG = Object.freeze({
 
 function pushSensorSample(sample) {
   const toFinite = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
+  const requiredFields = [
+    "leftImuX", "leftImuY", "leftImuZ", "leftGyroX", "leftGyroY", "leftGyroZ",
+    "rightImuX", "rightImuY", "rightImuZ", "rightGyroX", "rightGyroY", "rightGyroZ",
+    "leftFsr", "rightFsr",
+  ];
+  const missingFields = requiredFields.filter((key) => !Number.isFinite(Number(sample[key])));
+  const failedMpu = [sample.leftMpuOk === false ? "leftMpu" : null, sample.rightMpuOk === false ? "rightMpu" : null].filter(Boolean);
+  state.sensorQuality.lastMissingFields = [...missingFields, ...failedMpu];
+  state.sensorQuality.lastPacketAt = Date.now();
+  if (state.sensorQuality.lastMissingFields.length) state.sensorQuality.invalidSamples += 1;
+  else state.sensorQuality.validSamples += 1;
   const leftX = toFinite(sample.leftImuX ?? sample.leftAx ?? sample.lx);
   const leftY = toFinite(sample.leftImuY ?? sample.leftAy ?? sample.ly);
   const leftZ = toFinite(sample.leftImuZ ?? sample.leftAz ?? sample.lz);
@@ -713,7 +730,7 @@ function pushSensorSample(sample) {
     rightFsrVoltage: toFinite(sample.rightFsrVoltage ?? sample.rightVoltage),
   };
   state.tick += 1;
-  state.sampleCount += 1;
+  state.sampleCount = state.sensorQuality.validSamples;
   state.history.push({
     leftImu: leftMagnitude,
     rightImu: rightMagnitude,
@@ -769,6 +786,7 @@ async function connectHardware() {
   state.streaming = true;
   state.capturing = true;
   state.sampleCount = 0;
+  state.sensorQuality = { validSamples: 0, invalidSamples: 0, lastMissingFields: [], lastPacketAt: null };
   els.streamState.textContent = "Connected • capturing";
   els.streamState.classList.add("green");
   els.connectionLabel.textContent = `${device.name || "ESP32"} connected`;
@@ -777,6 +795,10 @@ async function connectHardware() {
   els.exitStream.hidden = false;
   setNotification("ESP32 connected. Capturing real MPU6050 and FSR readings.", true);
   updateAll();
+}
+
+function isSensorCaptureReady() {
+  return state.sensorQuality.validSamples >= 10;
 }
 
 function handleHardwareDisconnected() {
@@ -799,6 +821,7 @@ function resetSensorReadings() {
   state.sampleCount = 0;
   state.tick = 0;
   state.sensorSubmitted = false;
+  state.sensorQuality = { validSamples: 0, invalidSamples: 0, lastMissingFields: [], lastPacketAt: null };
   state.history = Array.from({ length: 48 }, () => ({ leftImu: 0, rightImu: 0, leftFsr: 0, rightFsr: 0, leftGyro: 0, rightGyro: 0 }));
   state.latest = {
     leftImu: 0, rightImu: 0, leftFsr: 0, rightFsr: 0,
@@ -889,6 +912,7 @@ function applyReportPreview(report) {
   const rightImu = report.rightImu ?? sensor.rightImu;
   const leftFsr = report.leftFsr ?? sensor.leftFsr;
   const rightFsr = report.rightFsr ?? sensor.rightFsr;
+  const capture = report.sensorCapture || {};
 
   if (els.fullReportPreview) {
     els.fullReportPreview.innerHTML = `
@@ -906,6 +930,10 @@ function applyReportPreview(report) {
       </div></div>
       <div class="full-report-section"><h4>Risk assessment</h4><div class="full-report-grid">
         <div><span>OA risk</span><strong class="risk-preview-value ${riskStageClass(level)}">${value(level)}</strong></div><div><span>OA risk score</span><strong>${Number.isFinite(score) ? score : "Not recorded"}/100</strong></div>
+      </div></div>
+      <div class="full-report-section"><h4>Sensor data quality</h4><div class="full-report-grid">
+        <div><span>Capture status</span><strong>${value(capture.status, "Not recorded")}</strong></div><div><span>Valid samples</span><strong>${value(capture.validSamples, "0")}</strong></div>
+        <div><span>Incomplete packets</span><strong>${value(capture.invalidSamples, "0")}</strong></div><div><span>Last missing fields</span><strong>${value((capture.lastMissingFields || []).join(", "), "None")}</strong></div>
       </div></div>
       <div class="full-report-section"><h4>IMU readings</h4><div class="full-report-grid">
         <div><span>Left accelerometer</span><strong>${num(leftImu)} g</strong></div><div><span>Right accelerometer</span><strong>${num(rightImu)} g</strong></div>
@@ -926,6 +954,81 @@ function applyReportPreview(report) {
   if (panel) panel.classList.add("report-preview-highlight");
 }
 
+async function fetchMlPrediction() {
+  if (state.isFetchingMl) return;
+  state.isFetchingMl = true;
+  try {
+    if (!isSensorCaptureReady()) {
+      state.mlResult = null;
+      return;
+    }
+    const intake = state.intakeData || {};
+    const age = Number(intake.age ?? numberValue(els.age)) || 50;
+    const bmi = Number(intake.bmi ?? calculateBmi() ?? numberValue(els.bmi)) || 25.0;
+    const pain = Number(intake.kneePainScore ?? numberValue(els.pain)) || 1;
+    const mobility = Number(intake.mobilityIssueScore ?? numberValue(els.mobility)) || 0;
+
+    const imuAsym = Math.abs(state.latest.leftImu - state.latest.rightImu);
+    const fsrAsym = Math.abs(state.latest.leftFsr - state.latest.rightFsr);
+
+    const payload = {
+      age,
+      sex: intake.gender || els.gender?.value || "Female",
+      bmi,
+      vas_pain_score: Math.min(10, Math.max(0, pain * 3.3)),
+      womac_score: Math.min(96, Math.max(0, (pain + mobility) * 12)),
+      prior_injury_history: "No Prior Injury",
+      activity_level: state.occupationData?.occupationType === "heavy" || state.occupationData?.occupationType === "athletic" ? "High" : "Moderate",
+      stance_time_asymmetry: Math.round(Math.min(30, imuAsym * 15 + fsrAsym * 0.05) * 10) / 10,
+      knee_rom_left: Math.round(Math.max(30, 65 - state.latest.leftImu * 5) * 10) / 10,
+      knee_rom_right: Math.round(Math.max(30, 65 - state.latest.rightImu * 5) * 10) / 10,
+      load_distribution_ratio: state.latest.rightFsr > 0 ? Math.round((state.latest.leftFsr / state.latest.rightFsr) * 100) / 100 : 1.0,
+      cadence: 100.0,
+      heel_strike_force_left: Math.round(Math.max(0.5, state.latest.leftImu || 1.1) * 10) / 10,
+      heel_strike_force_right: Math.round(Math.max(0.5, state.latest.rightImu || 1.1) * 10) / 10,
+      toe_off_force_left: 1.0,
+      toe_off_force_right: 1.0,
+      gait_cycle_variability: Math.round(Math.min(15, fsrAsym / 40 + 2.0) * 10) / 10
+    };
+
+    const res = await fetch("/api/ml/predict-risk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      const mlResult = await res.json();
+      if (mlResult && mlResult.ok) {
+        state.mlResult = mlResult;
+        updateMlUi(mlResult);
+      }
+    }
+  } catch (err) {
+    console.warn("ML Prediction API call fallback:", err);
+  } finally {
+    state.isFetchingMl = false;
+  }
+}
+
+function updateMlUi(mlResult) {
+  if (!mlResult) return;
+  const questPct = mlResult.feature_attribution_share?.Questionnaire_percent ?? 39.6;
+  const sensorPct = mlResult.feature_attribution_share?.Wearable_Sensor_percent ?? 60.4;
+  
+  if (els.mlShareQuest) els.mlShareQuest.style.width = `${questPct}%`;
+  if (els.mlShareSensor) els.mlShareSensor.style.width = `${sensorPct}%`;
+  if (els.mlQuestPct) els.mlQuestPct.textContent = `${questPct}%`;
+  if (els.mlSensorPct) els.mlSensorPct.textContent = `${sensorPct}%`;
+
+  if (mlResult.predicted_risk_tier) {
+    const tier = mlResult.predicted_risk_tier;
+    const conf = mlResult.confidence_score;
+    const qualityNote = mlResult.input_quality?.complete ? "Complete inputs." : `Missing inputs filled: ${(mlResult.input_quality?.imputed_fields || []).join(", ")}.`;
+    els.riskSummary.textContent = `Random Forest AI Model Prediction: ${tier} Risk (${conf}% confidence). ${qualityNote}`;
+  }
+}
+
 function updateRiskUi(factors) {
   const score = state.risk;
   const level = riskLabel(score);
@@ -934,12 +1037,18 @@ function updateRiskUi(factors) {
   els.riskLevel.textContent = `${level.label} risk`;
   els.meterValue.style.stroke = level.color;
   els.meterValue.style.strokeDashoffset = String(circumference - (score / 100) * circumference);
-  els.riskSummary.textContent =
-    level.label === "High"
-      ? "Sensor asymmetry and symptoms suggest this patient should be flagged for clinical follow-up."
-      : level.label === "Moderate"
-        ? "The result suggests measurable risk factors. Repeat screening and compare reports over time."
-        : "Current values are low risk, but this is a screening aid and not a medical diagnosis.";
+  
+  if (state.mlResult && state.mlResult.predicted_risk_tier) {
+    els.riskSummary.textContent = `Random Forest AI Model Prediction: ${state.mlResult.predicted_risk_tier} Risk (${state.mlResult.confidence_score}% confidence). Analyzed patient intake and live sensor telemetry.`;
+  } else {
+    els.riskSummary.textContent = !isSensorCaptureReady()
+      ? "Connect the ESP32 and capture at least 10 complete sensor samples before using the AI risk result."
+      : level.label === "High"
+        ? "Sensor asymmetry and symptoms suggest this patient should be flagged for clinical follow-up."
+        : level.label === "Moderate"
+          ? "The result suggests measurable risk factors. Repeat screening and compare reports over time."
+          : "Current values are low risk, but this is a screening aid and not a medical diagnosis.";
+  }
 
   const factorRows = [
     ["Symptom score", `${Math.round(factors.symptomScore)} pts`],
@@ -1404,6 +1513,13 @@ function buildCurrentReport() {
     score: state.risk,
     level: riskLabel(state.risk).label,
     sensors: { ...state.latest },
+    sensorCapture: {
+      status: isSensorCaptureReady() ? "Complete" : "Incomplete",
+      validSamples: state.sensorQuality.validSamples,
+      invalidSamples: state.sensorQuality.invalidSamples,
+      lastMissingFields: [...state.sensorQuality.lastMissingFields],
+      connectedDevice: state.hardwareDevice?.name || "Not connected",
+    },
     leftImuX: state.latest.leftImuX,
     leftImuY: state.latest.leftImuY,
     leftImuZ: state.latest.leftImuZ,
@@ -1459,6 +1575,10 @@ function createPdfBlob(report) {
     ["Occupation Risk", `${report.occupationRiskLevel} (${report.occupationRisk} pts)`],
     ["OA Risk", `${report.oaRisk}`],
     ["OA Risk Score", report.oaRiskScore],
+    ["Sensor capture status", report.sensorCapture?.status || "Not recorded"],
+    ["Valid sensor samples", report.sensorCapture?.validSamples ?? 0],
+    ["Incomplete sensor packets", report.sensorCapture?.invalidSamples ?? 0],
+    ["Missing sensor fields", (report.sensorCapture?.lastMissingFields || []).join(", ") || "None"],
   ];
   const sensorRows = [
     ["Left IMU magnitude", sensor(report.leftImu, "g")],
@@ -1672,9 +1792,10 @@ els.startStream.addEventListener("click", async () => {
 
 els.stopStream.addEventListener("click", () => {
   state.capturing = false;
-  state.sensorSubmitted = state.sampleCount > 0;
+  state.sensorSubmitted = isSensorCaptureReady();
   els.streamState.textContent = state.hardwareConnected ? "Connected • capture stopped" : "Hardware disconnected";
   if (state.sensorSubmitted) setNotification("Real sensor capture stopped. The latest MPU6050 and FSR readings are ready for analysis.", true);
+  else setNotification("Capture stopped, but the report needs at least 10 complete sensor samples. Check both MPU6050 and FSR connections.", false);
   updateAll();
 });
 
@@ -1691,6 +1812,10 @@ els.exitStream.addEventListener("click", async () => {
 });
 
 async function handleSaveReport() {
+  if (!isSensorCaptureReady()) {
+    setNotification("Connect the ESP32 and capture at least 10 complete sensor samples before saving a final risk report.", false);
+    return;
+  }
   const report = buildCurrentReport();
   await saveReport(report);
   state.riskCompleted = true;
