@@ -598,13 +598,7 @@ function renderWorkflowProgress(activeRoute) {
       container.innerHTML = "";
       return;
     }
-    const completion = {
-      intake: !!state.intakeSubmitted,
-      sensors: !!state.sensorSubmitted,
-      occupation: !!state.occupationSubmitted,
-      screening: !!state.riskCompleted,
-      reports: !!state.reportSaved,
-    };
+    const completion = workflowCompletionState();
     const completedCount = workflowSteps.filter((step) => completion[step.route]).length;
     const progress = Math.round((completedCount / workflowSteps.length) * 100);
     container.innerHTML = `<div class="progress-track-inline" role="list" aria-label="${escapeHtml(t("progress"))}: ${idx + 1} ${escapeHtml(t("of"))} ${workflowSteps.length}">${workflowSteps.map((step, i) => {
@@ -660,7 +654,24 @@ function currentRoute() {
   return routes[route] ? route : "overview";
 }
 
+function workflowCompletionState() {
+  return {
+    intake: !!state.intakeSubmitted,
+    sensors: !!state.sensorSubmitted,
+    occupation: !!state.occupationSubmitted,
+    screening: !!state.riskCompleted,
+    reports: !!state.reportSaved,
+  };
+}
+
+function firstIncompleteWorkflowRoute() {
+  const completion = workflowCompletionState();
+  return workflowSteps.find((step) => !completion[step.route])?.route || "reports";
+}
+
 function showRoute(route) {
+  // Navigation is intentionally open: every module can be visited/read.
+  // Only workflow actions/data submission are gated sequentially.
   const activeRoute = routes[route] ? route : "overview";
   els.pages.forEach((page) => {
     page.hidden = page.dataset.page !== activeRoute;
@@ -1391,7 +1402,7 @@ async function renderReports() {
         <td>${sensorValue(report.rightFsr, sensors.rightFsr, "N", 1)}</td>
         <td>
           <div class="report-table-actions">
-            <button type="button" class="report-action-button report-download-button" data-report-action="download" data-report-id="${escapeHtml(report.id || "")}">Download</button>
+            <button type="button" class="report-action-button report-download-button" data-report-action="download" data-report-id="${escapeHtml(report.id || "")}" ${isReportWorkflowComplete(report) ? "" : "disabled aria-disabled=\"true\" title=\"Complete all screening steps before downloading\""}>Download</button>
             <button type="button" class="report-action-button report-view-button" data-report-action="view" data-report-id="${escapeHtml(report.id || "")}">View</button>
           </div>
         </td>
@@ -1405,6 +1416,7 @@ function buildCurrentReport() {
   const occupationRiskLevel = occupationRisk.totalScore >= 30 ? "High" : occupationRisk.totalScore >= 15 ? "Moderate" : "Low";
   const selectedText = (element) => element.options[element.selectedIndex]?.textContent || "Not recorded";
   const now = new Date();
+  const workflowComplete = !!state.intakeSubmitted && !!state.sensorSubmitted && !!state.occupationSubmitted && !!state.riskCompleted;
   return {
     id: generateId(),
     createdAt: Date.now(),
@@ -1432,6 +1444,13 @@ function buildCurrentReport() {
     score: state.risk,
     level: riskLabel(state.risk).label,
     sensors: { ...state.latest },
+    workflow: {
+      intake: !!state.intakeSubmitted,
+      sensors: !!state.sensorSubmitted,
+      occupation: !!state.occupationSubmitted,
+      screening: !!state.riskCompleted,
+      complete: workflowComplete,
+    },
     sensorCapture: {
       status: isSensorCaptureReady() ? "Complete" : "Incomplete",
       validSamples: state.sensorQuality.validSamples,
@@ -1580,7 +1599,19 @@ function createPdfBlob(report) {
   return new Blob([pdf], { type: "application/pdf" });
 }
 
+function isReportWorkflowComplete(report) {
+  // Reports created before sequential workflow tracking remain downloadable.
+  // Only reports that carry the new workflow metadata are subject to the
+  // sequential-completion check. This preserves access to existing reports.
+  if (!report?.workflow) return true;
+  return report.workflow.complete === true;
+}
+
 function downloadReport(report) {
+  if (!isReportWorkflowComplete(report)) {
+    setNotification("This report cannot be downloaded because the sequential screening workflow is incomplete.", false);
+    return false;
+  }
   const blob = createPdfBlob(report);
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -1590,6 +1621,7 @@ function downloadReport(report) {
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return true;
 }
 
 function resetSensors() { resetSensorReadings(); }
@@ -1679,6 +1711,16 @@ els.occupationForm.addEventListener("change", () => {
 });
 els.occupationForm.addEventListener("submit", (event) => {
   event.preventDefault();
+  if (!state.intakeSubmitted) {
+    setNotification("Complete Patient Intake before submitting Occupation.", false);
+    showRoute("intake");
+    return;
+  }
+  if (!state.sensorSubmitted || !isSensorCaptureReady()) {
+    setNotification("Complete real ESP32 sensor capture before submitting Occupation.", false);
+    showRoute("sensors");
+    return;
+  }
   if (!els.occupationForm.checkValidity()) {
     els.occupationForm.reportValidity();
     return;
@@ -1701,6 +1743,11 @@ els.occupationForm.addEventListener("submit", (event) => {
 window.addEventListener("hashchange", () => showRoute(currentRoute()));
 
 els.startStream.addEventListener("click", async () => {
+  if (!state.intakeSubmitted) {
+    setNotification("Complete Patient Intake before starting sensor capture.", false);
+    showRoute("intake");
+    return;
+  }
   try {
     await connectHardware();
   } catch (error) {
@@ -1731,13 +1778,25 @@ els.exitStream.addEventListener("click", async () => {
 });
 
 async function handleSaveReport() {
-  if (!isSensorCaptureReady()) {
-    setNotification("Connect the ESP32 and capture at least 10 complete sensor samples before saving a final risk report.", false);
+  // Risk Result / report generation is the final action in the sequential data workflow.
+  if (!state.intakeSubmitted) {
+    setNotification("Complete Patient Intake before generating the risk report.", false);
+    showRoute("intake");
     return;
   }
+  if (!state.sensorSubmitted || !isSensorCaptureReady()) {
+    setNotification("Complete the real ESP32 sensor capture before generating the risk report.", false);
+    showRoute("sensors");
+    return;
+  }
+  if (!state.occupationSubmitted) {
+    setNotification("Complete Occupation assessment before generating the risk report.", false);
+    showRoute("occupation");
+    return;
+  }
+  state.riskCompleted = true;
   const report = buildCurrentReport();
   await saveReport(report);
-  state.riskCompleted = true;
   state.reportSaved = true;
   await renderReports();
   await renderOverview();
