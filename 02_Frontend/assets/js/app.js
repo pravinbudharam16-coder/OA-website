@@ -1493,6 +1493,13 @@ function buildCurrentReport() {
     score: state.risk,
     level: riskLabel(state.risk).label,
     sensors: { ...state.latest },
+    sensorCapture: {
+      status: isSensorCaptureReady() ? "Complete" : "Incomplete",
+      validSamples: state.sensorQuality.validSamples,
+      invalidSamples: state.sensorQuality.invalidSamples,
+      lastMissingFields: [...state.sensorQuality.lastMissingFields],
+      connectedDevice: state.hardwareDevice?.name || "Not connected",
+    },
     leftImuX: state.latest.leftImuX,
     leftImuY: state.latest.leftImuY,
     leftImuZ: state.latest.leftImuZ,
@@ -1785,6 +1792,10 @@ els.exitStream.addEventListener("click", async () => {
 });
 
 async function handleSaveReport() {
+  if (!isSensorCaptureReady()) {
+    setNotification("Connect the ESP32 and capture at least 10 complete sensor samples before saving a final risk report.", false);
+    return;
+  }
   const report = buildCurrentReport();
   await saveReport(report);
   state.riskCompleted = true;

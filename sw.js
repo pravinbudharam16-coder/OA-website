@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 const cacheName = "smartoa-ui-v20-organized-project";
+=======
+const cacheName = "smartoa-ui-v21-no-architecture";
+>>>>>>> parent of 4230080 (data workflow authenticate)
 const assets = [
   "./login.html",
   "./02_Frontend/assets/css/login.css",
