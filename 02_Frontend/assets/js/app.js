@@ -598,13 +598,7 @@ function renderWorkflowProgress(activeRoute) {
       container.innerHTML = "";
       return;
     }
-    const completion = {
-      intake: !!state.intakeSubmitted,
-      sensors: !!state.sensorSubmitted,
-      occupation: !!state.occupationSubmitted,
-      screening: !!state.riskCompleted,
-      reports: !!state.reportSaved,
-    };
+    const completion = workflowCompletionState();
     const completedCount = workflowSteps.filter((step) => completion[step.route]).length;
     const progress = Math.round((completedCount / workflowSteps.length) * 100);
     container.innerHTML = `<div class="progress-track-inline" role="list" aria-label="${escapeHtml(t("progress"))}: ${idx + 1} ${escapeHtml(t("of"))} ${workflowSteps.length}">${workflowSteps.map((step, i) => {
@@ -660,7 +654,24 @@ function currentRoute() {
   return routes[route] ? route : "overview";
 }
 
+function workflowCompletionState() {
+  return {
+    intake: !!state.intakeSubmitted,
+    sensors: !!state.sensorSubmitted,
+    occupation: !!state.occupationSubmitted,
+    screening: !!state.riskCompleted,
+    reports: !!state.reportSaved,
+  };
+}
+
+function firstIncompleteWorkflowRoute() {
+  const completion = workflowCompletionState();
+  return workflowSteps.find((step) => !completion[step.route])?.route || "reports";
+}
+
 function showRoute(route) {
+  // Navigation is intentionally open: every module can be visited/read.
+  // Only workflow actions/data submission are gated sequentially.
   const activeRoute = routes[route] ? route : "overview";
   els.pages.forEach((page) => {
     page.hidden = page.dataset.page !== activeRoute;
@@ -954,81 +965,6 @@ function applyReportPreview(report) {
   if (panel) panel.classList.add("report-preview-highlight");
 }
 
-async function fetchMlPrediction() {
-  if (state.isFetchingMl) return;
-  state.isFetchingMl = true;
-  try {
-    if (!isSensorCaptureReady()) {
-      state.mlResult = null;
-      return;
-    }
-    const intake = state.intakeData || {};
-    const age = Number(intake.age ?? numberValue(els.age)) || 50;
-    const bmi = Number(intake.bmi ?? calculateBmi() ?? numberValue(els.bmi)) || 25.0;
-    const pain = Number(intake.kneePainScore ?? numberValue(els.pain)) || 1;
-    const mobility = Number(intake.mobilityIssueScore ?? numberValue(els.mobility)) || 0;
-
-    const imuAsym = Math.abs(state.latest.leftImu - state.latest.rightImu);
-    const fsrAsym = Math.abs(state.latest.leftFsr - state.latest.rightFsr);
-
-    const payload = {
-      age,
-      sex: intake.gender || els.gender?.value || "Female",
-      bmi,
-      vas_pain_score: Math.min(10, Math.max(0, pain * 3.3)),
-      womac_score: Math.min(96, Math.max(0, (pain + mobility) * 12)),
-      prior_injury_history: "No Prior Injury",
-      activity_level: state.occupationData?.occupationType === "heavy" || state.occupationData?.occupationType === "athletic" ? "High" : "Moderate",
-      stance_time_asymmetry: Math.round(Math.min(30, imuAsym * 15 + fsrAsym * 0.05) * 10) / 10,
-      knee_rom_left: Math.round(Math.max(30, 65 - state.latest.leftImu * 5) * 10) / 10,
-      knee_rom_right: Math.round(Math.max(30, 65 - state.latest.rightImu * 5) * 10) / 10,
-      load_distribution_ratio: state.latest.rightFsr > 0 ? Math.round((state.latest.leftFsr / state.latest.rightFsr) * 100) / 100 : 1.0,
-      cadence: 100.0,
-      heel_strike_force_left: Math.round(Math.max(0.5, state.latest.leftImu || 1.1) * 10) / 10,
-      heel_strike_force_right: Math.round(Math.max(0.5, state.latest.rightImu || 1.1) * 10) / 10,
-      toe_off_force_left: 1.0,
-      toe_off_force_right: 1.0,
-      gait_cycle_variability: Math.round(Math.min(15, fsrAsym / 40 + 2.0) * 10) / 10
-    };
-
-    const res = await fetch("/api/ml/predict-risk", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    if (res.ok) {
-      const mlResult = await res.json();
-      if (mlResult && mlResult.ok) {
-        state.mlResult = mlResult;
-        updateMlUi(mlResult);
-      }
-    }
-  } catch (err) {
-    console.warn("ML Prediction API call fallback:", err);
-  } finally {
-    state.isFetchingMl = false;
-  }
-}
-
-function updateMlUi(mlResult) {
-  if (!mlResult) return;
-  const questPct = mlResult.feature_attribution_share?.Questionnaire_percent ?? 39.6;
-  const sensorPct = mlResult.feature_attribution_share?.Wearable_Sensor_percent ?? 60.4;
-  
-  if (els.mlShareQuest) els.mlShareQuest.style.width = `${questPct}%`;
-  if (els.mlShareSensor) els.mlShareSensor.style.width = `${sensorPct}%`;
-  if (els.mlQuestPct) els.mlQuestPct.textContent = `${questPct}%`;
-  if (els.mlSensorPct) els.mlSensorPct.textContent = `${sensorPct}%`;
-
-  if (mlResult.predicted_risk_tier) {
-    const tier = mlResult.predicted_risk_tier;
-    const conf = mlResult.confidence_score;
-    const qualityNote = mlResult.input_quality?.complete ? "Complete inputs." : `Missing inputs filled: ${(mlResult.input_quality?.imputed_fields || []).join(", ")}.`;
-    els.riskSummary.textContent = `Random Forest AI Model Prediction: ${tier} Risk (${conf}% confidence). ${qualityNote}`;
-  }
-}
-
 function updateRiskUi(factors) {
   const score = state.risk;
   const level = riskLabel(score);
@@ -1037,18 +973,12 @@ function updateRiskUi(factors) {
   els.riskLevel.textContent = `${level.label} risk`;
   els.meterValue.style.stroke = level.color;
   els.meterValue.style.strokeDashoffset = String(circumference - (score / 100) * circumference);
-  
-  if (state.mlResult && state.mlResult.predicted_risk_tier) {
-    els.riskSummary.textContent = `Random Forest AI Model Prediction: ${state.mlResult.predicted_risk_tier} Risk (${state.mlResult.confidence_score}% confidence). Analyzed patient intake and live sensor telemetry.`;
-  } else {
-    els.riskSummary.textContent = !isSensorCaptureReady()
-      ? "Connect the ESP32 and capture at least 10 complete sensor samples before using the AI risk result."
-      : level.label === "High"
-        ? "Sensor asymmetry and symptoms suggest this patient should be flagged for clinical follow-up."
-        : level.label === "Moderate"
-          ? "The result suggests measurable risk factors. Repeat screening and compare reports over time."
-          : "Current values are low risk, but this is a screening aid and not a medical diagnosis.";
-  }
+  els.riskSummary.textContent =
+    level.label === "High"
+      ? "Sensor asymmetry and symptoms suggest this patient should be flagged for clinical follow-up."
+      : level.label === "Moderate"
+        ? "The result suggests measurable risk factors. Repeat screening and compare reports over time."
+        : "Current values are low risk, but this is a screening aid and not a medical diagnosis.";
 
   const factorRows = [
     ["Symptom score", `${Math.round(factors.symptomScore)} pts`],
@@ -1472,7 +1402,7 @@ async function renderReports() {
         <td>${sensorValue(report.rightFsr, sensors.rightFsr, "N", 1)}</td>
         <td>
           <div class="report-table-actions">
-            <button type="button" class="report-action-button report-download-button" data-report-action="download" data-report-id="${escapeHtml(report.id || "")}">Download</button>
+            <button type="button" class="report-action-button report-download-button" data-report-action="download" data-report-id="${escapeHtml(report.id || "")}" ${isReportWorkflowComplete(report) ? "" : "disabled aria-disabled=\"true\" title=\"Complete all screening steps before downloading\""}>Download</button>
             <button type="button" class="report-action-button report-view-button" data-report-action="view" data-report-id="${escapeHtml(report.id || "")}">View</button>
           </div>
         </td>
@@ -1486,6 +1416,7 @@ function buildCurrentReport() {
   const occupationRiskLevel = occupationRisk.totalScore >= 30 ? "High" : occupationRisk.totalScore >= 15 ? "Moderate" : "Low";
   const selectedText = (element) => element.options[element.selectedIndex]?.textContent || "Not recorded";
   const now = new Date();
+  const workflowComplete = !!state.intakeSubmitted && !!state.sensorSubmitted && !!state.occupationSubmitted && !!state.riskCompleted;
   return {
     id: generateId(),
     createdAt: Date.now(),
@@ -1513,6 +1444,13 @@ function buildCurrentReport() {
     score: state.risk,
     level: riskLabel(state.risk).label,
     sensors: { ...state.latest },
+    workflow: {
+      intake: !!state.intakeSubmitted,
+      sensors: !!state.sensorSubmitted,
+      occupation: !!state.occupationSubmitted,
+      screening: !!state.riskCompleted,
+      complete: workflowComplete,
+    },
     sensorCapture: {
       status: isSensorCaptureReady() ? "Complete" : "Incomplete",
       validSamples: state.sensorQuality.validSamples,
@@ -1661,7 +1599,19 @@ function createPdfBlob(report) {
   return new Blob([pdf], { type: "application/pdf" });
 }
 
+function isReportWorkflowComplete(report) {
+  // Reports created before sequential workflow tracking remain downloadable.
+  // Only reports that carry the new workflow metadata are subject to the
+  // sequential-completion check. This preserves access to existing reports.
+  if (!report?.workflow) return true;
+  return report.workflow.complete === true;
+}
+
 function downloadReport(report) {
+  if (!isReportWorkflowComplete(report)) {
+    setNotification("This report cannot be downloaded because the sequential screening workflow is incomplete.", false);
+    return false;
+  }
   const blob = createPdfBlob(report);
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -1671,6 +1621,7 @@ function downloadReport(report) {
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return true;
 }
 
 function resetSensors() { resetSensorReadings(); }
@@ -1760,6 +1711,16 @@ els.occupationForm.addEventListener("change", () => {
 });
 els.occupationForm.addEventListener("submit", (event) => {
   event.preventDefault();
+  if (!state.intakeSubmitted) {
+    setNotification("Complete Patient Intake before submitting Occupation.", false);
+    showRoute("intake");
+    return;
+  }
+  if (!state.sensorSubmitted || !isSensorCaptureReady()) {
+    setNotification("Complete real ESP32 sensor capture before submitting Occupation.", false);
+    showRoute("sensors");
+    return;
+  }
   if (!els.occupationForm.checkValidity()) {
     els.occupationForm.reportValidity();
     return;
@@ -1782,6 +1743,11 @@ els.occupationForm.addEventListener("submit", (event) => {
 window.addEventListener("hashchange", () => showRoute(currentRoute()));
 
 els.startStream.addEventListener("click", async () => {
+  if (!state.intakeSubmitted) {
+    setNotification("Complete Patient Intake before starting sensor capture.", false);
+    showRoute("intake");
+    return;
+  }
   try {
     await connectHardware();
   } catch (error) {
@@ -1812,13 +1778,25 @@ els.exitStream.addEventListener("click", async () => {
 });
 
 async function handleSaveReport() {
-  if (!isSensorCaptureReady()) {
-    setNotification("Connect the ESP32 and capture at least 10 complete sensor samples before saving a final risk report.", false);
+  // Risk Result / report generation is the final action in the sequential data workflow.
+  if (!state.intakeSubmitted) {
+    setNotification("Complete Patient Intake before generating the risk report.", false);
+    showRoute("intake");
     return;
   }
+  if (!state.sensorSubmitted || !isSensorCaptureReady()) {
+    setNotification("Complete the real ESP32 sensor capture before generating the risk report.", false);
+    showRoute("sensors");
+    return;
+  }
+  if (!state.occupationSubmitted) {
+    setNotification("Complete Occupation assessment before generating the risk report.", false);
+    showRoute("occupation");
+    return;
+  }
+  state.riskCompleted = true;
   const report = buildCurrentReport();
   await saveReport(report);
-  state.riskCompleted = true;
   state.reportSaved = true;
   await renderReports();
   await renderOverview();
