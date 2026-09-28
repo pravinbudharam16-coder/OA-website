@@ -25,7 +25,6 @@
           <a href="#/occupation" data-route="occupation">Occupation</a>
           <a href="#/screening" data-route="screening">Risk Result</a>
           <a href="#/reports" data-route="reports">Reports</a>
-          <a href="#/architecture" data-route="architecture">Architecture</a>
         </nav>
 
         <div class="connection-card">
@@ -318,41 +317,6 @@
               <div><span>Occupation</span><strong id="previewOccupation">Not selected</strong></div>
               <div><span>Storage</span><strong>IndexedDB</strong></div>
               <div><span>Report format</span><strong>HTML (print/save as PDF)</strong></div>
-            </div>
-          </article>
-        </section>
-
-        <section class="page architecture-page" id="page-architecture" data-page="architecture" hidden>
-          <article class="architecture-panel">
-            <div class="panel-heading">
-              <div>
-                <p class="eyebrow">Project flow</p>
-                <h2>Prototype pipeline</h2>
-              </div>
-            </div>
-            <ol class="pipeline">
-              <li><span>1</span>ESP32 reads MPU6050 and FSR values</li>
-              <li><span>2</span>BLE sends compact sensor packets to the PWA</li>
-              <li><span>3</span>Feature extraction compares gait and loading asymmetry</li>
-              <li><span>4</span>ML model estimates screening risk</li>
-              <li><span>5</span>Report is stored locally for offline use</li>
-            </ol>
-          </article>
-
-          <article class="architecture-panel">
-            <div class="panel-heading">
-              <div>
-                <p class="eyebrow">Technology stack</p>
-                <h2>Implementation modules</h2>
-              </div>
-            </div>
-            <div class="module-grid">
-              <div><strong>PWA UI</strong><span>HTML, CSS, JavaScript</span></div>
-              <div><strong>Hardware</strong><span>ESP32, MPU6050, FSR</span></div>
-              <div><strong>Transport</strong><span>BLE packets from ESP32</span></div>
-              <div><strong>ML</strong><span>Python trained model concept</span></div>
-              <div><strong>Storage</strong><span>IndexedDB reports</span></div>
-              <div><strong>Offline</strong><span>Service Worker cache</span></div>
             </div>
           </article>
         </section>
