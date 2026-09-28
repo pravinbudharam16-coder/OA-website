@@ -43,14 +43,8 @@ def predict_patient_risk(patient_dict):
     }
     
     input_data = {}
-    imputed_fields = []
     for k, v in defaults.items():
-        value = patient_dict.get(k)
-        if value is None or value == "" or (isinstance(value, float) and not np.isfinite(value)):
-            input_data[k] = v
-            imputed_fields.append(k)
-        else:
-            input_data[k] = value
+        input_data[k] = patient_dict.get(k, v)
         
     df_single = pd.DataFrame([input_data])[feature_cols]
     
@@ -96,11 +90,6 @@ def predict_patient_risk(patient_dict):
         'feature_attribution_share': {
             'Questionnaire_percent': quest_pct,
             'Wearable_Sensor_percent': sensor_pct
-        },
-        'input_quality': {
-            'complete': len(imputed_fields) == 0,
-            'imputed_fields': imputed_fields,
-            'message': 'All model inputs were provided.' if not imputed_fields else 'Some missing inputs were filled with documented defaults; collect complete intake and sensor data for a stronger result.'
         },
         'patient_input': input_data
     }

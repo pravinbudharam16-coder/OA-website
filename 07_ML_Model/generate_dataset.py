@@ -2,26 +2,9 @@ import os
 import numpy as np
 import pandas as pd
 
-
-POPULATION_CONTEXT = 'North India-inspired (synthetic)'
-DATA_PROVENANCE = 'Generated values; not real patient records'
-
-
-def classify_indian_bmi(bmi):
-    if bmi < 18.5:
-        return 'Underweight'
-    if bmi < 23.0:
-        return 'Normal'
-    if bmi < 25.0:
-        return 'Overweight'
-    return 'Obesity'
-
-
 def generate_knee_oa_dataset(n_samples=1500, random_state=42):
     """
-    Generates synthetic clinical & wearable gait values for Knee Osteoarthritis
-    Risk Prediction. Demographic assumptions are illustrative and are not
-    estimates from a North Indian clinical cohort.
+    Generates a realistic clinical & wearable gait dataset for Knee Osteoarthritis Risk Prediction.
     
     Inputs:
     1. Questionnaire fields:
@@ -61,7 +44,7 @@ def generate_knee_oa_dataset(n_samples=1500, random_state=42):
     for _ in range(n_low):
         age = int(np.clip(np.random.normal(38, 10), 20, 65))
         sex = np.random.choice(['Male', 'Female'], p=[0.52, 0.48])
-        bmi = float(np.clip(np.random.normal(22.0, 3.0), 18.5, 30.0))
+        bmi = float(np.clip(np.random.normal(23.5, 3.0), 18.5, 30.0))
         vas_pain = float(np.clip(np.random.normal(1.2, 1.0), 0.0, 3.5))
         womac = float(np.clip(np.random.normal(8.0, 5.0), 0.0, 22.0))
         prior_injury = np.random.choice(
@@ -105,7 +88,7 @@ def generate_knee_oa_dataset(n_samples=1500, random_state=42):
     for _ in range(n_mod):
         age = int(np.clip(np.random.normal(56, 9), 35, 76))
         sex = np.random.choice(['Male', 'Female'], p=[0.42, 0.58])
-        bmi = float(np.clip(np.random.normal(25.5, 3.8), 20.0, 36.0))
+        bmi = float(np.clip(np.random.normal(28.2, 3.8), 21.0, 36.0))
         vas_pain = float(np.clip(np.random.normal(4.3, 1.2), 1.8, 6.8))
         womac = float(np.clip(np.random.normal(32.0, 9.0), 14.0, 52.0))
         prior_injury = np.random.choice(
@@ -161,7 +144,7 @@ def generate_knee_oa_dataset(n_samples=1500, random_state=42):
     for _ in range(n_high):
         age = int(np.clip(np.random.normal(67, 8), 48, 88))
         sex = np.random.choice(['Male', 'Female'], p=[0.35, 0.65])
-        bmi = float(np.clip(np.random.normal(29.5, 4.5), 23.0, 44.0))
+        bmi = float(np.clip(np.random.normal(32.5, 4.5), 24.5, 44.0))
         vas_pain = float(np.clip(np.random.normal(7.4, 1.1), 4.8, 9.9))
         womac = float(np.clip(np.random.normal(61.0, 12.0), 38.0, 92.0))
         prior_injury = np.random.choice(
@@ -214,9 +197,6 @@ def generate_knee_oa_dataset(n_samples=1500, random_state=42):
         })
 
     df = pd.DataFrame(data)
-    df.insert(0, 'population_context', POPULATION_CONTEXT)
-    df.insert(1, 'data_provenance', DATA_PROVENANCE)
-    df['bmi_category_indian'] = df['bmi'].map(classify_indian_bmi)
     # Shuffle dataframe
     df = df.sample(frac=1.0, random_state=random_state).reset_index(drop=True)
     return df

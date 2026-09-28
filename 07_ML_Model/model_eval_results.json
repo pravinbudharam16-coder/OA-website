@@ -45,110 +45,110 @@
     "Moderate"
   ],
   "feature_group_contribution": {
-    "Questionnaire_percent": 38.73116323427814,
-    "Wearable_Sensor_percent": 61.26883676572186
+    "Questionnaire_percent": 39.58196974927423,
+    "Wearable_Sensor_percent": 60.418030250725764
   },
   "top_features_importance": [
     {
       "group": "Questionnaire",
       "orig_feature": "womac_score",
-      "mdi_importance": 0.18971268187943743,
-      "perm_importance": 0.0029999999999999914
+      "mdi_importance": 0.18595639831251523,
+      "perm_importance": 0.009000000000000018
     },
     {
       "group": "Wearable Sensor",
       "orig_feature": "gait_cycle_variability",
-      "mdi_importance": 0.183166647532069,
+      "mdi_importance": 0.1761016588937341,
       "perm_importance": 0.0016666666666666496
     },
     {
       "group": "Questionnaire",
       "orig_feature": "vas_pain_score",
-      "mdi_importance": 0.16707706015496027,
-      "perm_importance": 0.004999999999999993
+      "mdi_importance": 0.17204072562422476,
+      "perm_importance": 0.0019999999999999905
     },
     {
       "group": "Wearable Sensor",
       "orig_feature": "stance_time_asymmetry",
-      "mdi_importance": 0.14626710694285933,
-      "perm_importance": 0.008666666666666678
+      "mdi_importance": 0.1446987608514345,
+      "perm_importance": 0.0029999999999999805
     },
     {
       "group": "Wearable Sensor",
       "orig_feature": "knee_rom_left",
-      "mdi_importance": 0.07837339527560594,
+      "mdi_importance": 0.08000732247086054,
       "perm_importance": 0.0
     },
     {
       "group": "Wearable Sensor",
       "orig_feature": "knee_rom_right",
-      "mdi_importance": 0.06971167370510947,
+      "mdi_importance": 0.07040353337462775,
       "perm_importance": 0.0
     },
     {
       "group": "Wearable Sensor",
       "orig_feature": "cadence",
-      "mdi_importance": 0.05009569323609265,
+      "mdi_importance": 0.04911204836300309,
+      "perm_importance": 0.0003333333333333299
+    },
+    {
+      "group": "Questionnaire",
+      "orig_feature": "age",
+      "mdi_importance": 0.02093827797466355,
       "perm_importance": 0.0
     },
     {
       "group": "Wearable Sensor",
       "orig_feature": "toe_off_force_left",
-      "mdi_importance": 0.023428379016612797,
-      "perm_importance": 0.0
-    },
-    {
-      "group": "Questionnaire",
-      "orig_feature": "age",
-      "mdi_importance": 0.021854299748686298,
-      "perm_importance": 0.0
-    },
-    {
-      "group": "Wearable Sensor",
-      "orig_feature": "load_distribution_ratio",
-      "mdi_importance": 0.01649790280523695,
-      "perm_importance": 0.0
-    },
-    {
-      "group": "Wearable Sensor",
-      "orig_feature": "heel_strike_force_right",
-      "mdi_importance": 0.016329797380437487,
+      "mdi_importance": 0.020013482192208006,
       "perm_importance": 0.0
     },
     {
       "group": "Wearable Sensor",
       "orig_feature": "toe_off_force_right",
-      "mdi_importance": 0.015722116435478235,
+      "mdi_importance": 0.018777361034358644,
+      "perm_importance": 0.0
+    },
+    {
+      "group": "Wearable Sensor",
+      "orig_feature": "load_distribution_ratio",
+      "mdi_importance": 0.018688061039288405,
       "perm_importance": 0.0
     },
     {
       "group": "Wearable Sensor",
       "orig_feature": "heel_strike_force_left",
-      "mdi_importance": 0.013095655327716678,
+      "mdi_importance": 0.01431122402686014,
       "perm_importance": 0.0
     },
     {
       "group": "Questionnaire",
       "orig_feature": "bmi",
-      "mdi_importance": 0.004002552450701884,
+      "mdi_importance": 0.012239446876465764,
+      "perm_importance": 0.0
+    },
+    {
+      "group": "Wearable Sensor",
+      "orig_feature": "heel_strike_force_right",
+      "mdi_importance": 0.0120668502608824,
       "perm_importance": 0.0
     },
     {
       "group": "Questionnaire",
       "orig_feature": "prior_injury_history",
-      "mdi_importance": 0.00316202707279331,
+      "mdi_importance": 0.0029967447924848555,
       "perm_importance": 0.0
     },
     {
       "group": "Questionnaire",
       "orig_feature": "activity_level",
-      "mdi_importance": 0.0013020044318881434,
+      "mdi_importance": 0.001396112402966603,
       "perm_importance": 0.0
     },
     {
       "group": "Questionnaire",
       "orig_feature": "sex",
-      "mdi_importance": 0.00020100660431409995,
+      "mdi_importance": 0.0002519915094215168,
       "perm_importance": 0.0
     }
   ]
