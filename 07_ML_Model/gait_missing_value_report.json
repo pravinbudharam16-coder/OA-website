@@ -1,0 +1,7 @@
+{
+  "source_rows": 206,
+  "missing_cells_before_imputation": 0,
+  "missing_by_column_before_imputation": {},
+  "imputation_rule": "numeric feature missing values are filled with the column median; all-missing numeric columns use 0.0",
+  "missing_cells_after_imputation": 0
+}

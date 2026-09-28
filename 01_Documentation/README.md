@@ -62,3 +62,6 @@ The current prototype should not be presented as a clinically validated diagnost
 - **ESP32 firmware:** `03_Hardware/ESP32_SmartOA_BLE.ino`
 - **Sensor wiring:** `03_Hardware/README.md`
 - **Users:** `04_Data/users.json`
+
+## Dataset provenance
+`07_ML_Model/knee_oa_dataset.csv` is generated synthetic data with an illustrative North India-inspired questionnaire profile. It is not collected from Indian participants and is not a representative North Indian clinical cohort. The `population_context` and `data_provenance` columns make this explicit. `bmi_category_indian` is descriptive metadata from the generator's chosen BMI bands; it is not a diagnosis and is excluded from model training. Gait measurements remain simulated examples for the prototype's sensor features. Do not use model metrics from this synthetic dataset as evidence of clinical performance.
