@@ -1,3 +1,4 @@
+
 const cacheName = "smartoa-ui-v21-no-architecture";
 const assets = [
   "./login.html",

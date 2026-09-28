@@ -6,12 +6,6 @@ const state = {
   hardwareCharacteristic: null,
   packetBuffer: "",
   sampleCount: 0,
-  sensorQuality: {
-    validSamples: 0,
-    invalidSamples: 0,
-    lastMissingFields: [],
-    lastPacketAt: null,
-  },
   tick: 0,
   history: Array.from({ length: 48 }, () => ({
     leftImu: 0,
@@ -104,6 +98,10 @@ const els = {
   workerRole: document.querySelector("#workerRole"),
   logoutButton: document.querySelector("#logoutButton"),
   notificationButton: document.querySelector("#notificationButton"),
+  mlShareQuest: document.querySelector("#mlShareQuest"),
+  mlShareSensor: document.querySelector("#mlShareSensor"),
+  mlQuestPct: document.querySelector("#mlQuestPct"),
+  mlSensorPct: document.querySelector("#mlSensorPct"),
   notificationBar: document.querySelector("#notificationBar"),
   notificationClose: document.querySelector("#notificationClose"),
   notificationText: document.querySelector("#notificationText"),
@@ -236,6 +234,10 @@ const routes = {
   reports: {
     title: "Offline patient report history",
     eyebrow: "",
+  },
+  architecture: {
+    title: "SmartOA project architecture",
+    eyebrow: "Prototype modules and flow",
   },
 };
 
@@ -515,9 +517,9 @@ const workflowSteps = [
 
 const translations = {
   en: {
-    nav: { overview:"Overview", intake:"Patient Intake", sensors:"Sensors", occupation:"Occupation", risk:"Risk Result", reports:"Reports" },
-    module: { overview:"Overview", intake:"Patient Intake", sensors:"Sensors", occupation:"Occupation", screening:"Risk Result", reports:"Reports" },
-    eyebrow: { overview:"Healthcare worker dashboard", intake:"Patient assessment", sensors:"Movement & loading", occupation:"Risk context", screening:"AI-assisted analysis", reports:"Saved screening records" },
+    nav: { overview:"Overview", intake:"Patient Intake", sensors:"Sensors", occupation:"Occupation", risk:"Risk Result", reports:"Reports", architecture:"Architecture" },
+    module: { overview:"Overview", intake:"Patient Intake", sensors:"Sensors", occupation:"Occupation", screening:"Risk Result", reports:"Reports", architecture:"Architecture" },
+    eyebrow: { overview:"Healthcare worker dashboard", intake:"Patient assessment", sensors:"Movement & loading", occupation:"Risk context", screening:"AI-assisted analysis", reports:"Saved screening records", architecture:"System design" },
     progress:"Screening progress", step:"Step", of:"of", complete:"complete", current:"Current", done:"Done",
     settings:"Settings", worker:"Healthcare worker", mode:"Mode: Offline-first", language:"Language", logout:"Logout",
     buttons:{ start:"Start", stop:"Stop", exit:"Exit", reset:"Reset readings", submitPatient:"Submit patient information", submitOccupation:"Submit occupation information", save:"Save & Download PDF report", clear:"Clear", viewAll:"View all →" },
@@ -526,12 +528,13 @@ const translations = {
     occupation:{ activity:"Work activity", assessment:"Occupation assessment", type:"Occupation type", standing:"Daily standing hours", lifting:"Lifting frequency", repetitive:"Repetitive movements", impact:"Occupational impact" },
     risk:{ result:"Screening result", summary:"Combining symptoms, BMI, gait asymmetry, foot loading imbalance and occupation." },
     reports:{ saved:"Saved reports", records:"Patient records", preview:"Report preview", current:"Current screening", date:"Date & Time", patient:"Patient", riskScore:"Risk score", status:"Status", occupation:"Occupation" },
-    overview:{ history:"History", recent:"Recent Screening", start:"Start new screening", workflow:"Screening workflow", workflowHint:"Move through the modules in order" }
+    overview:{ history:"History", recent:"Recent Screening", start:"Start new screening", workflow:"Screening workflow", workflowHint:"Move through the modules in order" },
+    architecture:{ design:"System design" }
   },
   as: {
-    nav:{ overview:"সাৰাংশ", intake:"ৰোগীৰ তথ্য", sensors:"চেন্সৰ", occupation:"পেছা", risk:"ঝুঁকিৰ ফলাফল", reports:"প্ৰতিবেদন" },
-    module:{ overview:"সাৰাংশ", intake:"ৰোগীৰ তথ্য", sensors:"চেন্সৰ", occupation:"পেছা", screening:"ঝুঁকিৰ ফলাফল", reports:"প্ৰতিবেদন" },
-    eyebrow:{ overview:"স্বাস্থ্যকৰ্মীৰ ডেশ্বব'ৰ্ড", intake:"ৰোগীৰ মূল্যায়ন", sensors:"চলন আৰু চাপ", occupation:"ঝুঁকিৰ প্ৰসংগ", screening:"AI-সহায়ক বিশ্লেষণ", reports:"সংৰক্ষিত স্ক্ৰিনিং ৰেকৰ্ড" },
+    nav:{ overview:"সাৰাংশ", intake:"ৰোগীৰ তথ্য", sensors:"চেন্সৰ", occupation:"পেছা", risk:"ঝুঁকিৰ ফলাফল", reports:"প্ৰতিবেদন", architecture:"স্থাপত্য" },
+    module:{ overview:"সাৰাংশ", intake:"ৰোগীৰ তথ্য", sensors:"চেন্সৰ", occupation:"পেছা", screening:"ঝুঁকিৰ ফলাফল", reports:"প্ৰতিবেদন", architecture:"স্থাপত্য" },
+    eyebrow:{ overview:"স্বাস্থ্যকৰ্মীৰ ডেশ্বব'ৰ্ড", intake:"ৰোগীৰ মূল্যায়ন", sensors:"চলন আৰু চাপ", occupation:"ঝুঁকিৰ প্ৰসংগ", screening:"AI-সহায়ক বিশ্লেষণ", reports:"সংৰক্ষিত স্ক্ৰিনিং ৰেকৰ্ড", architecture:"চিস্টেম ডিজাইন" },
     progress:"স্ক্ৰিনিং অগ্ৰগতি", step:"ধাপ", of:"ৰ", complete:"সম্পূৰ্ণ", current:"বৰ্তমান", done:"সম্পূৰ্ণ", settings:"ছেটিংছ", worker:"স্বাস্থ্যকৰ্মী", mode:"ম'ড: অফলাইন-প্ৰথম", language:"ভাষা", logout:"লগআউট",
     buttons:{ start:"আৰম্ভ", stop:"বন্ধ", exit:"বাহিৰ", reset:"পঢ়া মান ৰিছেট", submitPatient:"ৰোগীৰ তথ্য দাখিল", submitOccupation:"পেছাৰ তথ্য দাখিল", save:"সংৰক্ষণ আৰু PDF ডাউনলোড", clear:"মচক", viewAll:"সকলো চাওক →" },
     intake:{ context:"ক্লিনিকেল তথ্য", required:"প্ৰয়োজনীয় তথ্য", id:"ৰোগী ID", name:"ৰোগীৰ নাম", age:"বয়স", height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"হাঁুৰ বিষ", painDuration:"বিষৰ সময়কাল (দিন)", mobility:"চলাচল সীমাবদ্ধতা", selectPain:"বিষৰ স্তৰ বাছক", selectMobility:"চলাচল সমস্যা বাছক" },
@@ -539,12 +542,12 @@ const translations = {
     occupation:{ activity:"কৰ্ম কাৰ্যকলাপ", assessment:"পেছাৰ মূল্যায়ন", type:"পেছাৰ ধৰণ", standing:"দৈনিক থিয় হৈ থকা ঘণ্টা", lifting:"ভাৰ তোলাৰ সঘনতা", repetitive:"পুনৰাবৃত্তিমূলক চলন", impact:"পেছাগত প্ৰভাৱ" },
     risk:{ result:"স্ক্ৰিনিং ফলাফল", summary:"লক্ষণ, BMI, খোজৰ অসমতা, ভৰিৰ চাপ আৰু পেছা একেলগে বিশ্লেষণ কৰা হৈছে।" },
     reports:{ saved:"সংৰক্ষিত প্ৰতিবেদন", records:"ৰোগীৰ ৰেকৰ্ড", preview:"প্ৰতিবেদন পূৰ্বদৰ্শন", current:"বৰ্তমান স্ক্ৰিনিং", date:"তাৰিখ আৰু সময়", patient:"ৰোগী", riskScore:"ঝুঁকি স্ক'ৰ", status:"অৱস্থা", occupation:"পেছা" },
-    overview:{ history:"ইতিহাস", recent:"শেহতীয়া স্ক্ৰিনিং", start:"নতুন স্ক্ৰিনিং আৰম্ভ", workflow:"স্ক্ৰিনিং ধাপ", workflowHint:"ধাপসমূহ ক্ৰম অনুসৰি সম্পূৰ্ণ কৰক" }
+    overview:{ history:"ইতিহাস", recent:"শেহতীয়া স্ক্ৰিনিং", start:"নতুন স্ক্ৰিনিং আৰম্ভ", workflow:"স্ক্ৰিনিং ধাপ", workflowHint:"ধাপসমূহ ক্ৰম অনুসৰি সম্পূৰ্ণ কৰক" }, architecture:{ design:"চিস্টেম ডিজাইন" }
   },
   bn: {
-    nav:{ overview:"ওভারভিউ", intake:"রোগীর তথ্য", sensors:"সেন্সর", occupation:"পেশা", risk:"ঝুঁকির ফলাফল", reports:"রিপোর্ট" },
-    module:{ overview:"ওভারভিউ", intake:"রোগীর তথ্য", sensors:"সেন্সর", occupation:"পেশা", screening:"ঝুঁকির ফলাফল", reports:"রিপোর্ট" },
-    eyebrow:{ overview:"স্বাস্থ্যকর্মী ড্যাশবোর্ড", intake:"রোগী মূল্যায়ন", sensors:"চলন ও চাপ", occupation:"ঝুঁকির প্রসঙ্গ", screening:"AI-সহায়ক বিশ্লেষণ", reports:"সংরক্ষিত স্ক্রিনিং রেকর্ড" },
+    nav:{ overview:"ওভারভিউ", intake:"রোগীর তথ্য", sensors:"সেন্সর", occupation:"পেশা", risk:"ঝুঁকির ফলাফল", reports:"রিপোর্ট", architecture:"আর্কিটেকচার" },
+    module:{ overview:"ওভারভিউ", intake:"রোগীর তথ্য", sensors:"সেন্সর", occupation:"পেশা", screening:"ঝুঁকির ফলাফল", reports:"রিপোর্ট", architecture:"আর্কিটেকচার" },
+    eyebrow:{ overview:"স্বাস্থ্যকর্মী ড্যাশবোর্ড", intake:"রোগী মূল্যায়ন", sensors:"চলন ও চাপ", occupation:"ঝুঁকির প্রসঙ্গ", screening:"AI-সহায়ক বিশ্লেষণ", reports:"সংরক্ষিত স্ক্রিনিং রেকর্ড", architecture:"সিস্টেম ডিজাইন" },
     progress:"স্ক্রিনিং অগ্রগতি", step:"ধাপ", of:"এর", complete:"সম্পূর্ণ", current:"বর্তমান", done:"সম্পন্ন", settings:"সেটিংস", worker:"স্বাস্থ্যকর্মী", mode:"মোড: অফলাইন-প্রথম", language:"ভাষা", logout:"লগআউট",
     buttons:{ start:"শুরু", stop:"বন্ধ", exit:"বেরিয়ে যান", reset:"রিডিং রিসেট", submitPatient:"রোগীর তথ্য জমা দিন", submitOccupation:"পেশার তথ্য জমা দিন", save:"সংরক্ষণ ও PDF ডাউনলোড", clear:"মুছুন", viewAll:"সব দেখুন →" },
     intake:{ context:"ক্লিনিক্যাল তথ্য", required:"প্রয়োজনীয় তথ্য", id:"রোগী ID", name:"রোগীর নাম", age:"বয়স", height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"হাঁটুর ব্যথা", painDuration:"ব্যথার সময়কাল (দিন)", mobility:"চলাচলের সীমাবদ্ধতা", selectPain:"ব্যথার মাত্রা নির্বাচন করুন", selectMobility:"চলাচলের সমস্যা নির্বাচন করুন" },
@@ -552,14 +555,14 @@ const translations = {
     occupation:{ activity:"কাজের কার্যকলাপ", assessment:"পেশা মূল্যায়ন", type:"পেশার ধরন", standing:"প্রতিদিন দাঁড়িয়ে থাকার ঘণ্টা", lifting:"ভার তোলার হার", repetitive:"পুনরাবৃত্ত চলন", impact:"পেশাগত প্রভাব" },
     risk:{ result:"স্ক্রিনিং ফলাফল", summary:"উপসর্গ, BMI, হাঁটার অসমতা, পায়ের চাপের ভারসাম্যহীনতা ও পেশা একত্রে বিশ্লেষণ করা হচ্ছে।" },
     reports:{ saved:"সংরক্ষিত রিপোর্ট", records:"রোগীর রেকর্ড", preview:"রিপোর্ট পূর্বরূপ", current:"বর্তমান স্ক্রিনিং", date:"তারিখ ও সময়", patient:"রোগী", riskScore:"ঝুঁকি স্কোর", status:"অবস্থা", occupation:"পেশা" },
-    overview:{ history:"ইতিহাস", recent:"সাম্প্রতিক স্ক্রিনিং", start:"নতুন স্ক্রিনিং শুরু", workflow:"স্ক্রিনিং ধাপ", workflowHint:"ধাপগুলো ক্রমানুসারে সম্পূর্ণ করুন" }
+    overview:{ history:"ইতিহাস", recent:"সাম্প্রতিক স্ক্রিনিং", start:"নতুন স্ক্রিনিং শুরু", workflow:"স্ক্রিনিং ধাপ", workflowHint:"ধাপগুলো ক্রমানুসারে সম্পূর্ণ করুন" }, architecture:{ design:"সিস্টেম ডিজাইন" }
   },
-  brx: { nav:{overview:"फिननाय",intake:"हाब्रि फोरों",sensors:"सेन्सर",occupation:"थाखाय",risk:"रिस्क रिजाल्ट",reports:"रिपोर्ट"}, module:{overview:"फिननाय",intake:"हाब्रि फोरों",sensors:"सेन्सर",occupation:"थाखाय",screening:"रिस्क रिजाल्ट",reports:"रिपोर्ट"}, eyebrow:{overview:"हेल्थकेयर वर्कार डेशबोर्ड",intake:"हाब्रि मुल्यायन",sensors:"जायगा आरो लोडिं",occupation:"रिस्क संदर्भ",screening:"AI साहाज्य विश्लेषण",reports:"सेभ स्क्रिनिं रेकर्ड"}, progress:"स्क्रिनिं प्रोग्रेस",step:"स्टेप",of:"नि",complete:"फुरा",current:"दानो",done:"फुरा",settings:"सेटिंग",worker:"हेल्थकेयर वर्कार",mode:"मोड: अफलाइन-फोरों",language:"राव",logout:"लॉगआउट",buttons:{start:"जागाय",stop:"बन्द",exit:"बाहेर",reset:"रीडिंग रिसेट",submitPatient:"हाब्रि फोरों दाथाय",submitOccupation:"थाखाय दाथाय",save:"सेभ आरो PDF डाउनलोड",clear:"खालाम",viewAll:"गासै नाय →"},intake:{context:"क्लिनिकल फोरों",required:"जरुरी फोरों",id:"हाब्रि ID",name:"हाब्रि मुं",age:"बयस",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"जानु दुखु",painDuration:"दुखु सम (दिन)",mobility:"नावजाबाय सीमाय",selectPain:"दुखु लेभेल सायख",selectMobility:"नावजाबाय समस्या सायख"},sensors:{placement:"सेन्सर जायगा",setup:"2 IMU + 2 FSR सेटअप",telemetry:"लाइभ टेलिमेट्री",movement:"नावजाबाय आरो लोडिं",note:"फिजिकल ESP32/BLE हार्डवेर जाबाय रियल सेन्सर रिडिंग लाबो।"},occupation:{activity:"खामानि",assessment:"थाखाय मुल्यायन",type:"थाखाय रोखोम",standing:"दिनै थांनाय घण्टा",lifting:"बोझा लाबनाय सघनता",repetitive:"दोहोरायनाय नावजाबाय",impact:"थाखाय असर"},risk:{result:"स्क्रिनिं रिजाल्ट",summary:"लक्षण, BMI, गैत असमाय, फराय लोडिं आरो थाखाय एकलोगे विश्लेषण।"},reports:{saved:"सेभ रिपोर्ट",records:"हाब्रि रेकर्ड",preview:"रिपोर्ट नाय",current:"दानो स्क्रिनिं",date:"दिन आरो सम",patient:"हाब्रि",riskScore:"रिस्क स्कोर",status:"अवस्था",occupation:"थाखाय"},overview:{history:"जिरायती",recent:"दानो स्क्रिनिं",start:"नोगोर स्क्रिनिं जागाय",workflow:"स्क्रिनिं स्टेप",workflowHint:"स्टेप फोरों गोनांनाय"}},
-  mni: { nav:{overview:"ꯃꯈꯥ ꯑꯣꯏꯕ",intake:"ꯂꯩꯄꯥꯛ ꯂꯣꯏꯁꯤꯟ",sensors:"ꯁꯦꯟꯁꯔ",occupation:"ꯊꯧꯔꯥꯡ",risk:"ꯔꯤꯁ꯭ꯀ ꯔꯤꯖꯜꯇ",reports:"ꯔꯤꯄꯣꯔꯠ"}, module:{overview:"ꯃꯈꯥ ꯑꯣꯏꯕ",intake:"ꯂꯩꯄꯥꯛ ꯂꯣꯏꯁꯤꯟ",sensors:"ꯁꯦꯟꯁꯔ",occupation:"ꯊꯧꯔꯥꯡ",screening:"ꯔꯤꯁ꯭ꯀ ꯔꯤꯖꯜꯇ",reports:"ꯔꯤꯄꯣꯔꯠ"}, eyebrow:{overview:"ꯍꯦꯜꯊꯀꯦꯔ ꯋꯥꯔꯀꯔ ꯗꯦꯁꯕꯣꯔꯗ",intake:"ꯂꯩꯄꯥꯛ ꯃꯇꯦꯡ",sensors:"ꯃꯥꯔꯣꯜ ꯑꯃꯁꯨꯡ ꯂꯣꯗꯤꯡ",occupation:"ꯔꯤꯁ꯭ꯀ ꯄꯥꯡꯊꯣꯛ",screening:"AI-ꯆꯥꯡꯁꯤꯟꯕ ꯑꯦꯅꯥꯂꯥꯏꯁꯤꯁ",reports:"ꯁꯦꯚ ꯆꯦꯛꯀꯤꯡ ꯔꯦꯀꯣꯔꯗ"}, progress:"ꯆꯦꯛꯀꯤꯡ ꯄ꯭ꯔꯣꯒ꯭ꯔꯦꯁ",step:"ꯁ꯭ꯇꯦꯞ",of:"ꯒꯤ",complete:"ꯂꯣꯏꯁꯤꯜꯂꯕ",current:"ꯍꯧꯖꯤꯛ",done:"ꯂꯣꯏꯁꯤꯜꯂꯕ",settings:"ꯁꯦꯇꯤꯡ",worker:"ꯍꯦꯜꯊꯀꯦꯔ ꯋꯥꯔꯀꯔ",mode:"ꯃꯣꯗ: ꯑꯣꯐꯂꯥꯏꯟ",language:"ꯂꯣꯟ",logout:"ꯂꯣꯒꯑꯥꯎꯠ",buttons:{start:"ꯍꯧꯖꯤꯟꯕ",stop:"ꯂꯣꯏꯁꯤꯟꯕ",exit:"ꯅꯣꯡꯃꯥ",reset:"ꯔꯤꯗꯤꯡ ꯔꯤꯁꯦꯠ",submitPatient:"ꯂꯩꯄꯥꯛ ꯐꯣꯔꯣꯝ ꯄꯤꯕ",submitOccupation:"ꯊꯧꯔꯥꯡ ꯐꯣꯔꯣꯝ ꯄꯤꯕ",save:"ꯁꯦꯚ ꯑꯃꯁꯨꯡ PDF ꯗꯥꯎꯅꯂꯣꯗ",clear:"ꯂꯣꯏꯁꯤꯟꯕ",viewAll:"ꯄꯨꯝꯕ ꯎꯅꯕ →"}, intake:{context:"ꯀ꯭ꯂꯤꯅꯤꯀꯦꯜ ꯐꯣꯔꯣꯝ",required:"ꯃꯇꯨꯡ ꯄꯥꯡꯊꯣꯛꯄ ꯐꯣꯔꯣꯝ",id:"ꯂꯩꯄꯥꯛ ID",name:"ꯂꯩꯄꯥꯛ ꯃꯤꯡ",age:"ꯊꯧ",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"ꯅꯨꯡꯁꯤ ꯂꯣꯟ",painDuration:"ꯅꯨꯡꯁꯤ ꯃꯇꯥꯡ (ꯅꯨꯃꯤꯠ)",mobility:"ꯃꯥꯔꯣꯜ ꯂꯣꯏꯁꯤꯟꯕ",selectPain:"ꯅꯨꯡꯁꯤ ꯂꯦꯚꯦꯜ ꯁꯥꯏꯈ",selectMobility:"ꯃꯥꯔꯣꯜ ꯁꯥꯏꯈ"}, sensors:{placement:"ꯁꯦꯟꯁꯔ ꯑꯃꯁꯨꯡ ꯊꯝꯄ",setup:"2 IMU + 2 FSR ꯁꯦꯠꯑꯞ",telemetry:"ꯂꯥꯏꯚ ꯇꯦꯂꯤꯃꯦꯇ꯭ꯔꯤ",movement:"ꯃꯥꯔꯣꯜ ꯑꯃꯁꯨꯡ ꯂꯣꯗꯤꯡ",note:"ꯐꯤꯖꯤꯀꯦꯜ ESP32/BLE ꯍꯥꯔꯗꯋꯦꯔ ꯁꯝꯖꯤꯟꯅꯥ ꯔꯤꯌꯦꯜ ꯁꯦꯟꯁꯔ ꯔꯤꯗꯤꯡ ꯂꯧꯕꯤꯌꯨ।"}, occupation:{activity:"ꯊꯧꯔꯥꯡ",assessment:"ꯊꯧꯔꯥꯡ ꯃꯇꯦꯡ",type:"ꯊꯧꯔꯥꯡ ꯃꯈꯥ",standing:"ꯅꯨꯃꯤꯠ ꯁꯤꯡꯖꯤꯟꯕ ꯄꯨꯡ",lifting:"ꯂꯥꯡꯕ ꯁꯥꯏꯅꯕ",repetitive:"ꯑꯃꯁꯨꯡ ꯑꯃꯁꯨꯡ ꯍꯥꯡꯕ",impact:"ꯊꯧꯔꯥꯡ ꯑꯁꯤ"}, risk:{result:"ꯆꯦꯛꯀꯤꯡ ꯔꯤꯖꯜꯇ",summary:"ꯁꯤꯝꯇꯣꯝ, BMI, ꯆꯥꯡꯁꯤꯟ ꯑꯁꯝꯕ, ꯐꯨꯠ ꯂꯣꯗꯤꯡ ꯑꯃꯁꯨꯡ ꯊꯧꯔꯥꯡ ꯄꯨꯝꯅꯃꯛ ꯑꯦꯅꯥꯂꯥꯏꯁꯤꯁ ꯇꯧꯏ"}, reports:{saved:"ꯁꯦꯚ ꯔꯤꯄꯣꯔꯠ",records:"ꯂꯩꯄꯥꯛ ꯔꯦꯀꯣꯔꯗ",preview:"ꯔꯤꯄꯣꯔꯠ ꯎꯠꯄ",current:"ꯍꯧꯖꯤꯛ ꯆꯦꯛꯀꯤꯡ",date:"ꯇꯥꯔꯤꯈ ꯑꯃꯁꯨꯡ ꯃꯇꯝ",patient:"ꯂꯩꯄꯥꯛ",riskScore:"ꯔꯤꯁ꯭ꯀ ꯁ꯭ꯀꯣꯔ",status:"ꯁ꯭ꯇꯦꯇꯁ",occupation:"ꯊꯧꯔꯥꯡ"}, overview:{history:"ꯍꯤꯁꯇꯔꯤ",recent:"ꯅꯨꯡꯉꯥꯏ ꯆꯦꯛꯀꯤꯡ",start:"ꯑꯅꯧꯕ ꯆꯦꯛꯀꯤꯡ ꯍꯧꯖꯤꯟꯕ",workflow:"ꯆꯦꯛꯀꯤꯡ ꯁ꯭ꯇꯦꯞ",workflowHint:"ꯁ꯭ꯇꯦꯞ ꯄꯨꯝꯅꯃꯛ ꯑꯅꯨꯕꯥ ꯆꯠꯂꯨ"}},
-  kha: { nav:{overview:"Kyndon",intake:"Ka jingtip u nongpang",sensors:"Ki sensor",occupation:"Kamai",risk:"Ka jingmih jong ka jingma",reports:"Ki report"}, module:{overview:"Kyndon",intake:"Ka jingtip u nongpang",sensors:"Ki sensor",occupation:"Kamai",screening:"Ka jingmih jong ka jingma",reports:"Ki report"}, eyebrow:{overview:"Dashboard jong u nongtrei ka koit ka khiah",intake:"Ka jingbishar nongpang",sensors:"Ka jingïaid bad ka jingkit",occupation:"Ka jingma ha ka kam",screening:"Ka jingbishar AI",reports:"Ki record ba la buh"}, progress:"Ka jingïaid shaphrang",step:"Step",of:"na",complete:"la dep",current:"mynta",done:"la dep",settings:"Ki settings",worker:"Nongtrei ka koit ka khiah",mode:"Mode: Offline",language:"Ktien",logout:"Log out",buttons:{start:"Sdang",stop:"Pynsangeh",exit:"Exit",reset:"Reset readings",submitPatient:"Buhrieh jingtip nongpang",submitOccupation:"Buhrieh jingtip kamai",save:"Buh bad download PDF",clear:"Pynkhuid",viewAll:"Peit lut →"},intake:{context:"Ka jingtip klinikal",required:"Ki jingtip ba donkam",id:"Patient ID",name:"Ka kyrteng",age:"Rta",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"Ka jingpang khoh",painDuration:"Por ka jingpang (ki sngi)",mobility:"Ka jingeh jingïaid",selectPain:"Jied ka jingïa pang",selectMobility:"Jied ka jingeh jingïaid"},sensors:{placement:"Ka jaka sensor",setup:"2 IMU + 2 FSR",telemetry:"Live telemetry",movement:"Ïaid bad jingkit",note:"Pynïasoh ïa ka physical ESP32/BLE hardware ban shim ïa ki sensor readings ba shisha."},occupation:{activity:"Ka kam",assessment:"Ka jingbishar kamai",type:"Jait kam",standing:"Ki kynta ba ieng man ka sngi",lifting:"Ka jingïakhun jingkit",repetitive:"Ki jingïaid ba manla",impact:"Ka jingktah na ka kam"},risk:{result:"Ka jingmih screening",summary:"La pynïasoh lang ïa ki symptom, BMI, jingïaid, jingïapher ka jingkit bad ka kam."},reports:{saved:"Ki report ba la buh",records:"Ki record nongpang",preview:"Ka jingpeit report",current:"Screening mynta",date:"Tarik bad por",patient:"Nongpang",riskScore:"Risk score",status:"Status",occupation:"Kamai"},overview:{history:"Ka histori",recent:"Screening ba dang shen",start:"Sdang screening thymmai",workflow:"Ki step screening",workflowHint:"Bud ïa ki module ha ka rukom"}},
-  lus: { nav:{overview:"Thilthlawn",intake:"Mihing Thil",sensors:"Sensors",occupation:"Hna",risk:"Risk Result",reports:"Report"}, module:{overview:"Thilthlawn",intake:"Mihing Thil",sensors:"Sensors",occupation:"Hna",screening:"Risk Result",reports:"Report"}, eyebrow:{overview:"Health worker dashboard",intake:"Mihing check",sensors:"Hranghnawm leh load",occupation:"Hna risk",screening:"AI analysis",reports:"Report dah"}, progress:"Screening kalna",step:"Step",of:"a",complete:"zo",current:"tun",done:"zo",settings:"Settings",worker:"Health worker",mode:"Mode: Offline",language:"Ṭawng",logout:"Logout",buttons:{start:"Tan",stop:"Tawp",exit:"Chhuak",reset:"Reset readings",submitPatient:"Patient info submit",submitOccupation:"Hna info submit",save:"Save leh PDF download",clear:"Paih",viewAll:"En vek →"},intake:{context:"Clinical info",required:"Info mamawh",id:"Patient ID",name:"Patient hming",age:"Kum",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"Knee nat",painDuration:"Nat hun (ni)",mobility:"Kal theihna harsat",selectPain:"Pain level thlang",selectMobility:"Mobility harsat thlang"},sensors:{placement:"Sensor dahna",setup:"2 IMU + 2 FSR",telemetry:"Live telemetry",movement:"Kalna leh load",note:"Pynïasoh ïa ka physical ESP32/BLE hardware ban shim ïa ki sensor readings ba shisha."},occupation:{activity:"Hna",assessment:"Hna check",type:"Hna type",standing:"Ni khatah ding hun",lifting:"Boh thlak tlan",repetitive:"Thil tih nawn",impact:"Hna nghawng"},risk:{result:"Screening result",summary:"Symptom, BMI, kalna, kutke load leh hna kan en tlang."},reports:{saved:"Report dah",records:"Patient record",preview:"Report enna",current:"Screening tunah",date:"Tarik leh hun",patient:"Patient",riskScore:"Risk score",status:"Status",occupation:"Hna"},overview:{history:"History",recent:"Screening thar",start:"Screening thar tan",workflow:"Screening step",workflowHint:"Module te chu order in kal rawh"}},
-  grt: { nav:{overview:"Nokrek",intake:"Rikgital",sensors:"Sensor",occupation:"Kam",risk:"Risk Result",reports:"Report"}, module:{overview:"Nokrek",intake:"Rikgital",sensors:"Sensor",occupation:"Kam",screening:"Risk Result",reports:"Report"}, eyebrow:{overview:"Health worker dashboard",intake:"Patient assessment",sensors:"Movement aro loading",occupation:"Kam aro risk",screening:"AI analysis",reports:"Saved screening record"}, progress:"Screening progress",step:"Step",of:"ni",complete:"finish",current:"daal",done:"finish",settings:"Settings",worker:"Health worker",mode:"Mode: Offline",language:"Kattarang",logout:"Logout",buttons:{start:"Start",stop:"Stop",exit:"Exit",reset:"Reset readings",submitPatient:"Patient info submit",submitOccupation:"Occupation info submit",save:"Save aro PDF download",clear:"Clear",viewAll:"View all →"},intake:{context:"Clinical context",required:"Required information",id:"Patient ID",name:"Patient name",age:"Age",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"Knee pain",painDuration:"Pain duration (days)",mobility:"Mobility limit",selectPain:"Select pain level",selectMobility:"Select mobility issue"},sensors:{placement:"Sensor placement",setup:"2 IMU + 2 FSR setup",telemetry:"Live telemetry",movement:"Movement aro loading",note:"Connect the physical ESP32/BLE hardware to capture real sensor readings."},occupation:{activity:"Work activity",assessment:"Occupation assessment",type:"Occupation type",standing:"Daily standing hours",lifting:"Lifting frequency",repetitive:"Repetitive movements",impact:"Occupational impact"},risk:{result:"Screening result",summary:"Symptoms, BMI, gait asymmetry, foot loading aro occupation are combined."},reports:{saved:"Saved reports",records:"Patient records",preview:"Report preview",current:"Current screening",date:"Date & Time",patient:"Patient",riskScore:"Risk score",status:"Status",occupation:"Occupation"},overview:{history:"History",recent:"Recent screening",start:"Start new screening",workflow:"Screening workflow",workflowHint:"Move through modules in order"}},
-  kok: { nav:{overview:"Bwtai",intake:"Bwtai rong",sensors:"Sensor",occupation:"Khulum",risk:"Risk Result",reports:"Report"}, module:{overview:"Bwtai",intake:"Bwtai rong",sensors:"Sensor",occupation:"Khulum",screening:"Risk Result",reports:"Report"}, eyebrow:{overview:"Healthcare worker dashboard",intake:"Patient assessment",sensors:"Movement aro loading",occupation:"Risk context",screening:"AI analysis",reports:"Saved screening records"}, progress:"Screening progress",step:"Step",of:"ni",complete:"complete",current:"current",done:"done",settings:"Settings",worker:"Healthcare worker",mode:"Mode: Offline-first",language:"Kothok",logout:"Logout",buttons:{start:"Start",stop:"Stop",exit:"Exit",reset:"Reset readings",submitPatient:"Submit patient information",submitOccupation:"Submit occupation information",save:"Save aro PDF download",clear:"Clear",viewAll:"View all →"},intake:{context:"Clinical context",required:"Required inputs",id:"Patient ID",name:"Patient Name",age:"Age",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"Knee pain",painDuration:"Pain duration (days)",mobility:"Mobility limit",selectPain:"Select pain level",selectMobility:"Select mobility issue"},sensors:{placement:"Sensor placement",setup:"2 IMU + 2 FSR setup",telemetry:"Live telemetry",movement:"Movement and loading",note:"Connect the physical ESP32/BLE hardware to capture real sensor readings."},occupation:{activity:"Work activity",assessment:"Occupation assessment",type:"Occupation type",standing:"Daily standing hours",lifting:"Lifting frequency",repetitive:"Repetitive movements",impact:"Occupational impact"},risk:{result:"Screening result",summary:"Symptoms, BMI, gait asymmetry, foot loading imbalance and occupation combined."},reports:{saved:"Saved reports",records:"Patient records",preview:"Report preview",current:"Current screening",date:"Date & Time",patient:"Patient",riskScore:"Risk score",status:"Status",occupation:"Occupation"},overview:{history:"History",recent:"Recent Screening",start:"Start new screening",workflow:"Screening workflow",workflowHint:"Move through the modules in order",gait:"3D Gait Analysis",gaitEyebrow:"Live bilateral gait visualization"}}
+  brx: { nav:{overview:"फिननाय",intake:"हाब्रि फोरों",sensors:"सेन्सर",occupation:"थाखाय",risk:"रिस्क रिजाल्ट",reports:"रिपोर्ट",architecture:"आर्किटेक्चर"}, module:{overview:"फिननाय",intake:"हाब्रि फोरों",sensors:"सेन्सर",occupation:"थाखाय",screening:"रिस्क रिजाल्ट",reports:"रिपोर्ट",architecture:"आर्किटेक्चर"}, eyebrow:{overview:"हेल्थकेयर वर्कार डेशबोर्ड",intake:"हाब्रि मुल्यायन",sensors:"जायगा आरो लोडिं",occupation:"रिस्क संदर्भ",screening:"AI साहाज्य विश्लेषण",reports:"सेभ स्क्रिनिं रेकर्ड",architecture:"सिस्टम डिजाइन"}, progress:"स्क्रिनिं प्रोग्रेस",step:"स्टेप",of:"नि",complete:"फुरा",current:"दानो",done:"फुरा",settings:"सेटिंग",worker:"हेल्थकेयर वर्कार",mode:"मोड: अफलाइन-फोरों",language:"राव",logout:"लॉगआउट",buttons:{start:"जागाय",stop:"बन्द",exit:"बाहेर",reset:"रीडिंग रिसेट",submitPatient:"हाब्रि फोरों दाथाय",submitOccupation:"थाखाय दाथाय",save:"सेभ आरो PDF डाउनलोड",clear:"खालाम",viewAll:"गासै नाय →"},intake:{context:"क्लिनिकल फोरों",required:"जरुरी फोरों",id:"हाब्रि ID",name:"हाब्रि मुं",age:"बयस",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"जानु दुखु",painDuration:"दुखु सम (दिन)",mobility:"नावजाबाय सीमाय",selectPain:"दुखु लेभेल सायख",selectMobility:"नावजाबाय समस्या सायख"},sensors:{placement:"सेन्सर जायगा",setup:"2 IMU + 2 FSR सेटअप",telemetry:"लाइभ टेलिमेट्री",movement:"नावजाबाय आरो लोडिं",note:"फिजिकल ESP32/BLE हार्डवेर जाबाय रियल सेन्सर रिडिंग लाबो।"},occupation:{activity:"खामानि",assessment:"थाखाय मुल्यायन",type:"थाखाय रोखोम",standing:"दिनै थांनाय घण्टा",lifting:"बोझा लाबनाय सघनता",repetitive:"दोहोरायनाय नावजाबाय",impact:"थाखाय असर"},risk:{result:"स्क्रिनिं रिजाल्ट",summary:"लक्षण, BMI, गैत असमाय, फराय लोडिं आरो थाखाय एकलोगे विश्लेषण।"},reports:{saved:"सेभ रिपोर्ट",records:"हाब्रि रेकर्ड",preview:"रिपोर्ट नाय",current:"दानो स्क्रिनिं",date:"दिन आरो सम",patient:"हाब्रि",riskScore:"रिस्क स्कोर",status:"अवस्था",occupation:"थाखाय"},overview:{history:"जिरायती",recent:"दानो स्क्रिनिं",start:"नोगोर स्क्रिनिं जागाय",workflow:"स्क्रिनिं स्टेप",workflowHint:"स्टेप फोरों गोनांनाय"},architecture:{design:"सिस्टम डिजाइन"}},
+  mni: { nav:{overview:"ꯃꯈꯥ ꯑꯣꯏꯕ",intake:"ꯂꯩꯄꯥꯛ ꯂꯣꯏꯁꯤꯟ",sensors:"ꯁꯦꯟꯁꯔ",occupation:"ꯊꯧꯔꯥꯡ",risk:"ꯔꯤꯁ꯭ꯀ ꯔꯤꯖꯜꯇ",reports:"ꯔꯤꯄꯣꯔꯠ",architecture:"ꯁꯤꯁꯇꯦꯝ ꯃꯈꯥ"}, module:{overview:"ꯃꯈꯥ ꯑꯣꯏꯕ",intake:"ꯂꯩꯄꯥꯛ ꯂꯣꯏꯁꯤꯟ",sensors:"ꯁꯦꯟꯁꯔ",occupation:"ꯊꯧꯔꯥꯡ",screening:"ꯔꯤꯁ꯭ꯀ ꯔꯤꯖꯜꯇ",reports:"ꯔꯤꯄꯣꯔꯠ",architecture:"ꯁꯤꯁꯇꯦꯝ ꯃꯈꯥ"}, eyebrow:{overview:"ꯍꯦꯜꯊꯀꯦꯔ ꯋꯥꯔꯀꯔ ꯗꯦꯁꯕꯣꯔꯗ",intake:"ꯂꯩꯄꯥꯛ ꯃꯇꯦꯡ",sensors:"ꯃꯥꯔꯣꯜ ꯑꯃꯁꯨꯡ ꯂꯣꯗꯤꯡ",occupation:"ꯔꯤꯁ꯭ꯀ ꯄꯥꯡꯊꯣꯛ",screening:"AI-ꯆꯥꯡꯁꯤꯟꯕ ꯑꯦꯅꯥꯂꯥꯏꯁꯤꯁ",reports:"ꯁꯦꯚ ꯆꯦꯛꯀꯤꯡ ꯔꯦꯀꯣꯔꯗ",architecture:"ꯁꯤꯁꯇꯦꯝ ꯗꯤꯖꯥꯏꯟ"}, progress:"ꯆꯦꯛꯀꯤꯡ ꯄ꯭ꯔꯣꯒ꯭ꯔꯦꯁ",step:"ꯁ꯭ꯇꯦꯞ",of:"ꯒꯤ",complete:"ꯂꯣꯏꯁꯤꯜꯂꯕ",current:"ꯍꯧꯖꯤꯛ",done:"ꯂꯣꯏꯁꯤꯜꯂꯕ",settings:"ꯁꯦꯇꯤꯡ",worker:"ꯍꯦꯜꯊꯀꯦꯔ ꯋꯥꯔꯀꯔ",mode:"ꯃꯣꯗ: ꯑꯣꯐꯂꯥꯏꯟ",language:"ꯂꯣꯟ",logout:"ꯂꯣꯒꯑꯥꯎꯠ",buttons:{start:"ꯍꯧꯖꯤꯟꯕ",stop:"ꯂꯣꯏꯁꯤꯟꯕ",exit:"ꯅꯣꯡꯃꯥ",reset:"ꯔꯤꯗꯤꯡ ꯔꯤꯁꯦꯠ",submitPatient:"ꯂꯩꯄꯥꯛ ꯐꯣꯔꯣꯝ ꯄꯤꯕ",submitOccupation:"ꯊꯧꯔꯥꯡ ꯐꯣꯔꯣꯝ ꯄꯤꯕ",save:"ꯁꯦꯚ ꯑꯃꯁꯨꯡ PDF ꯗꯥꯎꯅꯂꯣꯗ",clear:"ꯂꯣꯏꯁꯤꯟꯕ",viewAll:"ꯄꯨꯝꯕ ꯎꯅꯕ →"}, intake:{context:"ꯀ꯭ꯂꯤꯅꯤꯀꯦꯜ ꯐꯣꯔꯣꯝ",required:"ꯃꯇꯨꯡ ꯄꯥꯡꯊꯣꯛꯄ ꯐꯣꯔꯣꯝ",id:"ꯂꯩꯄꯥꯛ ID",name:"ꯂꯩꯄꯥꯛ ꯃꯤꯡ",age:"ꯊꯧ",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"ꯅꯨꯡꯁꯤ ꯂꯣꯟ",painDuration:"ꯅꯨꯡꯁꯤ ꯃꯇꯥꯡ (ꯅꯨꯃꯤꯠ)",mobility:"ꯃꯥꯔꯣꯜ ꯂꯣꯏꯁꯤꯟꯕ",selectPain:"ꯅꯨꯡꯁꯤ ꯂꯦꯚꯦꯜ ꯁꯥꯏꯈ",selectMobility:"ꯃꯥꯔꯣꯜ ꯁꯥꯏꯈ"}, sensors:{placement:"ꯁꯦꯟꯁꯔ ꯑꯃꯁꯨꯡ ꯊꯝꯄ",setup:"2 IMU + 2 FSR ꯁꯦꯠꯑꯞ",telemetry:"ꯂꯥꯏꯚ ꯇꯦꯂꯤꯃꯦꯇ꯭ꯔꯤ",movement:"ꯃꯥꯔꯣꯜ ꯑꯃꯁꯨꯡ ꯂꯣꯗꯤꯡ",note:"ꯐꯤꯖꯤꯀꯦꯜ ESP32/BLE ꯍꯥꯔꯗꯋꯦꯔ ꯁꯝꯖꯤꯟꯅꯥ ꯔꯤꯌꯦꯜ ꯁꯦꯟꯁꯔ ꯔꯤꯗꯤꯡ ꯂꯧꯕꯤꯌꯨ।"}, occupation:{activity:"ꯊꯧꯔꯥꯡ",assessment:"ꯊꯧꯔꯥꯡ ꯃꯇꯦꯡ",type:"ꯊꯧꯔꯥꯡ ꯃꯈꯥ",standing:"ꯅꯨꯃꯤꯠ ꯁꯤꯡꯖꯤꯟꯕ ꯄꯨꯡ",lifting:"ꯂꯥꯡꯕ ꯁꯥꯏꯅꯕ",repetitive:"ꯑꯃꯁꯨꯡ ꯑꯃꯁꯨꯡ ꯍꯥꯡꯕ",impact:"ꯊꯧꯔꯥꯡ ꯑꯁꯤ"}, risk:{result:"ꯆꯦꯛꯀꯤꯡ ꯔꯤꯖꯜꯇ",summary:"ꯁꯤꯝꯇꯣꯝ, BMI, ꯆꯥꯡꯁꯤꯟ ꯑꯁꯝꯕ, ꯐꯨꯠ ꯂꯣꯗꯤꯡ ꯑꯃꯁꯨꯡ ꯊꯧꯔꯥꯡ ꯄꯨꯝꯅꯃꯛ ꯑꯦꯅꯥꯂꯥꯏꯁꯤꯁ ꯇꯧꯏ"}, reports:{saved:"ꯁꯦꯚ ꯔꯤꯄꯣꯔꯠ",records:"ꯂꯩꯄꯥꯛ ꯔꯦꯀꯣꯔꯗ",preview:"ꯔꯤꯄꯣꯔꯠ ꯎꯠꯄ",current:"ꯍꯧꯖꯤꯛ ꯆꯦꯛꯀꯤꯡ",date:"ꯇꯥꯔꯤꯈ ꯑꯃꯁꯨꯡ ꯃꯇꯝ",patient:"ꯂꯩꯄꯥꯛ",riskScore:"ꯔꯤꯁ꯭ꯀ ꯁ꯭ꯀꯣꯔ",status:"ꯁ꯭ꯇꯦꯇꯁ",occupation:"ꯊꯧꯔꯥꯡ"}, overview:{history:"ꯍꯤꯁꯇꯔꯤ",recent:"ꯅꯨꯡꯉꯥꯏ ꯆꯦꯛꯀꯤꯡ",start:"ꯑꯅꯧꯕ ꯆꯦꯛꯀꯤꯡ ꯍꯧꯖꯤꯟꯕ",workflow:"ꯆꯦꯛꯀꯤꯡ ꯁ꯭ꯇꯦꯞ",workflowHint:"ꯁ꯭ꯇꯦꯞ ꯄꯨꯝꯅꯃꯛ ꯑꯅꯨꯕꯥ ꯆꯠꯂꯨ"}, architecture:{design:"ꯁꯤꯁꯇꯦꯝ ꯗꯤꯖꯥꯏꯟ"}},
+  kha: { nav:{overview:"Kyndon",intake:"Ka jingtip u nongpang",sensors:"Ki sensor",occupation:"Kamai",risk:"Ka jingmih jong ka jingma",reports:"Ki report",architecture:"Ka jingtei"}, module:{overview:"Kyndon",intake:"Ka jingtip u nongpang",sensors:"Ki sensor",occupation:"Kamai",screening:"Ka jingmih jong ka jingma",reports:"Ki report",architecture:"Ka jingtei"}, eyebrow:{overview:"Dashboard jong u nongtrei ka koit ka khiah",intake:"Ka jingbishar nongpang",sensors:"Ka jingïaid bad ka jingkit",occupation:"Ka jingma ha ka kam",screening:"Ka jingbishar AI",reports:"Ki record ba la buh",architecture:"Ka jingtei system"}, progress:"Ka jingïaid shaphrang",step:"Step",of:"na",complete:"la dep",current:"mynta",done:"la dep",settings:"Ki settings",worker:"Nongtrei ka koit ka khiah",mode:"Mode: Offline",language:"Ktien",logout:"Log out",buttons:{start:"Sdang",stop:"Pynsangeh",exit:"Exit",reset:"Reset readings",submitPatient:"Buhrieh jingtip nongpang",submitOccupation:"Buhrieh jingtip kamai",save:"Buh bad download PDF",clear:"Pynkhuid",viewAll:"Peit lut →"},intake:{context:"Ka jingtip klinikal",required:"Ki jingtip ba donkam",id:"Patient ID",name:"Ka kyrteng",age:"Rta",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"Ka jingpang khoh",painDuration:"Por ka jingpang (ki sngi)",mobility:"Ka jingeh jingïaid",selectPain:"Jied ka jingïa pang",selectMobility:"Jied ka jingeh jingïaid"},sensors:{placement:"Ka jaka sensor",setup:"2 IMU + 2 FSR",telemetry:"Live telemetry",movement:"Ïaid bad jingkit",note:"Pynïasoh ïa ka physical ESP32/BLE hardware ban shim ïa ki sensor readings ba shisha."},occupation:{activity:"Ka kam",assessment:"Ka jingbishar kamai",type:"Jait kam",standing:"Ki kynta ba ieng man ka sngi",lifting:"Ka jingïakhun jingkit",repetitive:"Ki jingïaid ba manla",impact:"Ka jingktah na ka kam"},risk:{result:"Ka jingmih screening",summary:"La pynïasoh lang ïa ki symptom, BMI, jingïaid, jingïapher ka jingkit bad ka kam."},reports:{saved:"Ki report ba la buh",records:"Ki record nongpang",preview:"Ka jingpeit report",current:"Screening mynta",date:"Tarik bad por",patient:"Nongpang",riskScore:"Risk score",status:"Status",occupation:"Kamai"},overview:{history:"Ka histori",recent:"Screening ba dang shen",start:"Sdang screening thymmai",workflow:"Ki step screening",workflowHint:"Bud ïa ki module ha ka rukom"},architecture:{design:"Ka jingtei system"}},
+  lus: { nav:{overview:"Thilthlawn",intake:"Mihing Thil",sensors:"Sensors",occupation:"Hna",risk:"Risk Result",reports:"Report",architecture:"System siam"}, module:{overview:"Thilthlawn",intake:"Mihing Thil",sensors:"Sensors",occupation:"Hna",screening:"Risk Result",reports:"Report",architecture:"System siam"}, eyebrow:{overview:"Health worker dashboard",intake:"Mihing check",sensors:"Hranghnawm leh load",occupation:"Hna risk",screening:"AI analysis",reports:"Report dah",architecture:"System siam"}, progress:"Screening kalna",step:"Step",of:"a",complete:"zo",current:"tun",done:"zo",settings:"Settings",worker:"Health worker",mode:"Mode: Offline",language:"Ṭawng",logout:"Logout",buttons:{start:"Tan",stop:"Tawp",exit:"Chhuak",reset:"Reset readings",submitPatient:"Patient info submit",submitOccupation:"Hna info submit",save:"Save leh PDF download",clear:"Paih",viewAll:"En vek →"},intake:{context:"Clinical info",required:"Info mamawh",id:"Patient ID",name:"Patient hming",age:"Kum",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"Knee nat",painDuration:"Nat hun (ni)",mobility:"Kal theihna harsat",selectPain:"Pain level thlang",selectMobility:"Mobility harsat thlang"},sensors:{placement:"Sensor dahna",setup:"2 IMU + 2 FSR",telemetry:"Live telemetry",movement:"Kalna leh load",note:"Pynïasoh ïa ka physical ESP32/BLE hardware ban shim ïa ki sensor readings ba shisha."},occupation:{activity:"Hna",assessment:"Hna check",type:"Hna type",standing:"Ni khatah ding hun",lifting:"Boh thlak tlan",repetitive:"Thil tih nawn",impact:"Hna nghawng"},risk:{result:"Screening result",summary:"Symptom, BMI, kalna, kutke load leh hna kan en tlang."},reports:{saved:"Report dah",records:"Patient record",preview:"Report enna",current:"Screening tunah",date:"Tarik leh hun",patient:"Patient",riskScore:"Risk score",status:"Status",occupation:"Hna"},overview:{history:"History",recent:"Screening thar",start:"Screening thar tan",workflow:"Screening step",workflowHint:"Module te chu order in kal rawh"},architecture:{design:"System siam"}},
+  grt: { nav:{overview:"Nokrek",intake:"Rikgital",sensors:"Sensor",occupation:"Kam",risk:"Risk Result",reports:"Report",architecture:"System design"}, module:{overview:"Nokrek",intake:"Rikgital",sensors:"Sensor",occupation:"Kam",screening:"Risk Result",reports:"Report",architecture:"System design"}, eyebrow:{overview:"Health worker dashboard",intake:"Patient assessment",sensors:"Movement aro loading",occupation:"Kam aro risk",screening:"AI analysis",reports:"Saved screening record",architecture:"System design"}, progress:"Screening progress",step:"Step",of:"ni",complete:"finish",current:"daal",done:"finish",settings:"Settings",worker:"Health worker",mode:"Mode: Offline",language:"Kattarang",logout:"Logout",buttons:{start:"Start",stop:"Stop",exit:"Exit",reset:"Reset readings",submitPatient:"Patient info submit",submitOccupation:"Occupation info submit",save:"Save aro PDF download",clear:"Clear",viewAll:"View all →"},intake:{context:"Clinical context",required:"Required information",id:"Patient ID",name:"Patient name",age:"Age",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"Knee pain",painDuration:"Pain duration (days)",mobility:"Mobility limit",selectPain:"Select pain level",selectMobility:"Select mobility issue"},sensors:{placement:"Sensor placement",setup:"2 IMU + 2 FSR setup",telemetry:"Live telemetry",movement:"Movement aro loading",note:"Connect the physical ESP32/BLE hardware to capture real sensor readings."},occupation:{activity:"Work activity",assessment:"Occupation assessment",type:"Occupation type",standing:"Daily standing hours",lifting:"Lifting frequency",repetitive:"Repetitive movements",impact:"Occupational impact"},risk:{result:"Screening result",summary:"Symptoms, BMI, gait asymmetry, foot loading aro occupation are combined."},reports:{saved:"Saved reports",records:"Patient records",preview:"Report preview",current:"Current screening",date:"Date & Time",patient:"Patient",riskScore:"Risk score",status:"Status",occupation:"Occupation"},overview:{history:"History",recent:"Recent screening",start:"Start new screening",workflow:"Screening workflow",workflowHint:"Move through modules in order"},architecture:{design:"System design"}},
+  kok: { nav:{overview:"Bwtai",intake:"Bwtai rong",sensors:"Sensor",occupation:"Khulum",risk:"Risk Result",reports:"Report",architecture:"System design"}, module:{overview:"Bwtai",intake:"Bwtai rong",sensors:"Sensor",occupation:"Khulum",screening:"Risk Result",reports:"Report",architecture:"System design"}, eyebrow:{overview:"Healthcare worker dashboard",intake:"Patient assessment",sensors:"Movement aro loading",occupation:"Risk context",screening:"AI analysis",reports:"Saved screening records",architecture:"System design"}, progress:"Screening progress",step:"Step",of:"ni",complete:"complete",current:"current",done:"done",settings:"Settings",worker:"Healthcare worker",mode:"Mode: Offline-first",language:"Kothok",logout:"Logout",buttons:{start:"Start",stop:"Stop",exit:"Exit",reset:"Reset readings",submitPatient:"Submit patient information",submitOccupation:"Submit occupation information",save:"Save aro PDF download",clear:"Clear",viewAll:"View all →"},intake:{context:"Clinical context",required:"Required inputs",id:"Patient ID",name:"Patient Name",age:"Age",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"Knee pain",painDuration:"Pain duration (days)",mobility:"Mobility limit",selectPain:"Select pain level",selectMobility:"Select mobility issue"},sensors:{placement:"Sensor placement",setup:"2 IMU + 2 FSR setup",telemetry:"Live telemetry",movement:"Movement and loading",note:"Connect the physical ESP32/BLE hardware to capture real sensor readings."},occupation:{activity:"Work activity",assessment:"Occupation assessment",type:"Occupation type",standing:"Daily standing hours",lifting:"Lifting frequency",repetitive:"Repetitive movements",impact:"Occupational impact"},risk:{result:"Screening result",summary:"Symptoms, BMI, gait asymmetry, foot loading imbalance and occupation combined."},reports:{saved:"Saved reports",records:"Patient records",preview:"Report preview",current:"Current screening",date:"Date & Time",patient:"Patient",riskScore:"Risk score",status:"Status",occupation:"Occupation"},overview:{history:"History",recent:"Recent Screening",start:"Start new screening",workflow:"Screening workflow",workflowHint:"Move through the modules in order",gait:"3D Gait Analysis",gaitEyebrow:"Live bilateral gait visualization"},architecture:{design:"System design"}}
 };
 
 let currentLanguage = localStorage.getItem(LANGUAGE_KEY) || "en";
@@ -618,7 +621,7 @@ function applyLanguage() {
   document.documentElement.lang = currentLanguage === "mni" ? "mni" : currentLanguage;
   document.body.dataset.lang = currentLanguage;
   const route = currentRoute();
-  const navMap = { overview:"overview", intake:"intake", sensors:"sensors", occupation:"occupation", screening:"risk", reports:"reports" };
+  const navMap = { overview:"overview", intake:"intake", sensors:"sensors", occupation:"occupation", screening:"risk", reports:"reports", architecture:"architecture" };
   Object.entries(navMap).forEach(([routeKey, key]) => setElementText(`[data-route="${routeKey}"] span`, t(`nav.${key}`)));
   document.querySelectorAll("[data-module-header]").forEach((header) => {
     const r = header.dataset.moduleHeader;
@@ -670,6 +673,7 @@ function showRoute(route) {
   });
   document.body.dataset.activeRoute = activeRoute;
   renderWorkflowProgress(activeRoute);
+  if (activeRoute === "screening") fetchMlPrediction();
   if (activeRoute === "reports") renderReports();
   if (activeRoute === "overview") renderOverview();
   if (window.location.hash !== `#/${activeRoute}`) {
@@ -690,17 +694,6 @@ const BLE_CONFIG = Object.freeze({
 
 function pushSensorSample(sample) {
   const toFinite = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
-  const requiredFields = [
-    "leftImuX", "leftImuY", "leftImuZ", "leftGyroX", "leftGyroY", "leftGyroZ",
-    "rightImuX", "rightImuY", "rightImuZ", "rightGyroX", "rightGyroY", "rightGyroZ",
-    "leftFsr", "rightFsr",
-  ];
-  const missingFields = requiredFields.filter((key) => !Number.isFinite(Number(sample[key])));
-  const failedMpu = [sample.leftMpuOk === false ? "leftMpu" : null, sample.rightMpuOk === false ? "rightMpu" : null].filter(Boolean);
-  state.sensorQuality.lastMissingFields = [...missingFields, ...failedMpu];
-  state.sensorQuality.lastPacketAt = Date.now();
-  if (state.sensorQuality.lastMissingFields.length) state.sensorQuality.invalidSamples += 1;
-  else state.sensorQuality.validSamples += 1;
   const leftX = toFinite(sample.leftImuX ?? sample.leftAx ?? sample.lx);
   const leftY = toFinite(sample.leftImuY ?? sample.leftAy ?? sample.ly);
   const leftZ = toFinite(sample.leftImuZ ?? sample.leftAz ?? sample.lz);
@@ -730,7 +723,7 @@ function pushSensorSample(sample) {
     rightFsrVoltage: toFinite(sample.rightFsrVoltage ?? sample.rightVoltage),
   };
   state.tick += 1;
-  state.sampleCount = state.sensorQuality.validSamples;
+  state.sampleCount += 1;
   state.history.push({
     leftImu: leftMagnitude,
     rightImu: rightMagnitude,
@@ -786,7 +779,6 @@ async function connectHardware() {
   state.streaming = true;
   state.capturing = true;
   state.sampleCount = 0;
-  state.sensorQuality = { validSamples: 0, invalidSamples: 0, lastMissingFields: [], lastPacketAt: null };
   els.streamState.textContent = "Connected • capturing";
   els.streamState.classList.add("green");
   els.connectionLabel.textContent = `${device.name || "ESP32"} connected`;
@@ -795,10 +787,6 @@ async function connectHardware() {
   els.exitStream.hidden = false;
   setNotification("ESP32 connected. Capturing real MPU6050 and FSR readings.", true);
   updateAll();
-}
-
-function isSensorCaptureReady() {
-  return state.sensorQuality.validSamples >= 10;
 }
 
 function handleHardwareDisconnected() {
@@ -821,7 +809,6 @@ function resetSensorReadings() {
   state.sampleCount = 0;
   state.tick = 0;
   state.sensorSubmitted = false;
-  state.sensorQuality = { validSamples: 0, invalidSamples: 0, lastMissingFields: [], lastPacketAt: null };
   state.history = Array.from({ length: 48 }, () => ({ leftImu: 0, rightImu: 0, leftFsr: 0, rightFsr: 0, leftGyro: 0, rightGyro: 0 }));
   state.latest = {
     leftImu: 0, rightImu: 0, leftFsr: 0, rightFsr: 0,
@@ -912,7 +899,6 @@ function applyReportPreview(report) {
   const rightImu = report.rightImu ?? sensor.rightImu;
   const leftFsr = report.leftFsr ?? sensor.leftFsr;
   const rightFsr = report.rightFsr ?? sensor.rightFsr;
-  const capture = report.sensorCapture || {};
 
   if (els.fullReportPreview) {
     els.fullReportPreview.innerHTML = `
@@ -930,10 +916,6 @@ function applyReportPreview(report) {
       </div></div>
       <div class="full-report-section"><h4>Risk assessment</h4><div class="full-report-grid">
         <div><span>OA risk</span><strong class="risk-preview-value ${riskStageClass(level)}">${value(level)}</strong></div><div><span>OA risk score</span><strong>${Number.isFinite(score) ? score : "Not recorded"}/100</strong></div>
-      </div></div>
-      <div class="full-report-section"><h4>Sensor data quality</h4><div class="full-report-grid">
-        <div><span>Capture status</span><strong>${value(capture.status, "Not recorded")}</strong></div><div><span>Valid samples</span><strong>${value(capture.validSamples, "0")}</strong></div>
-        <div><span>Incomplete packets</span><strong>${value(capture.invalidSamples, "0")}</strong></div><div><span>Last missing fields</span><strong>${value((capture.lastMissingFields || []).join(", "), "None")}</strong></div>
       </div></div>
       <div class="full-report-section"><h4>IMU readings</h4><div class="full-report-grid">
         <div><span>Left accelerometer</span><strong>${num(leftImu)} g</strong></div><div><span>Right accelerometer</span><strong>${num(rightImu)} g</strong></div>
@@ -958,10 +940,6 @@ async function fetchMlPrediction() {
   if (state.isFetchingMl) return;
   state.isFetchingMl = true;
   try {
-    if (!isSensorCaptureReady()) {
-      state.mlResult = null;
-      return;
-    }
     const intake = state.intakeData || {};
     const age = Number(intake.age ?? numberValue(els.age)) || 50;
     const bmi = Number(intake.bmi ?? calculateBmi() ?? numberValue(els.bmi)) || 25.0;
@@ -1024,8 +1002,7 @@ function updateMlUi(mlResult) {
   if (mlResult.predicted_risk_tier) {
     const tier = mlResult.predicted_risk_tier;
     const conf = mlResult.confidence_score;
-    const qualityNote = mlResult.input_quality?.complete ? "Complete inputs." : `Missing inputs filled: ${(mlResult.input_quality?.imputed_fields || []).join(", ")}.`;
-    els.riskSummary.textContent = `Random Forest AI Model Prediction: ${tier} Risk (${conf}% confidence). ${qualityNote}`;
+    els.riskSummary.textContent = `Random Forest AI Model Prediction: ${tier} Risk (${conf}% confidence). Analyzed patient intake and live sensor telemetry.`;
   }
 }
 
@@ -1041,9 +1018,8 @@ function updateRiskUi(factors) {
   if (state.mlResult && state.mlResult.predicted_risk_tier) {
     els.riskSummary.textContent = `Random Forest AI Model Prediction: ${state.mlResult.predicted_risk_tier} Risk (${state.mlResult.confidence_score}% confidence). Analyzed patient intake and live sensor telemetry.`;
   } else {
-    els.riskSummary.textContent = !isSensorCaptureReady()
-      ? "Connect the ESP32 and capture at least 10 complete sensor samples before using the AI risk result."
-      : level.label === "High"
+    els.riskSummary.textContent =
+      level.label === "High"
         ? "Sensor asymmetry and symptoms suggest this patient should be flagged for clinical follow-up."
         : level.label === "Moderate"
           ? "The result suggests measurable risk factors. Repeat screening and compare reports over time."
@@ -1057,6 +1033,10 @@ function updateRiskUi(factors) {
     ["Load asymmetry", `${Math.round(factors.loadAsymmetry * 100)}%`],
     ["Occupation contribution", `${Math.round(factors.occupationScore)} pts`],
   ];
+
+  if (state.mlResult) {
+    factorRows.unshift(["AI ML Model Prediction", `${state.mlResult.predicted_risk_tier} (${state.mlResult.confidence_score}% conf)`]);
+  }
 
   els.factorList.innerHTML = factorRows
     .map(([name, value]) => `<div class="factor"><span>${name}</span><strong>${value}</strong></div>`)
@@ -1538,6 +1518,7 @@ function buildCurrentReport() {
     rightImu: state.latest.rightImu,
     leftFsr: state.latest.leftFsr,
     rightFsr: state.latest.rightFsr,
+    mlResult: state.mlResult || null,
     schemaVersion: 9,
     storage: "IndexedDB",
   };
@@ -1575,11 +1556,11 @@ function createPdfBlob(report) {
     ["Occupation Risk", `${report.occupationRiskLevel} (${report.occupationRisk} pts)`],
     ["OA Risk", `${report.oaRisk}`],
     ["OA Risk Score", report.oaRiskScore],
-    ["Sensor capture status", report.sensorCapture?.status || "Not recorded"],
-    ["Valid sensor samples", report.sensorCapture?.validSamples ?? 0],
-    ["Incomplete sensor packets", report.sensorCapture?.invalidSamples ?? 0],
-    ["Missing sensor fields", (report.sensorCapture?.lastMissingFields || []).join(", ") || "None"],
   ];
+  if (report.mlResult) {
+    rows.push(["AI ML Model Prediction", `${report.mlResult.predicted_risk_tier} Risk (${report.mlResult.confidence_score}% confidence)`]);
+    rows.push(["Feature Share (Quest/Sensor)", `${report.mlResult.feature_attribution_share?.Questionnaire_percent}% Intake / ${report.mlResult.feature_attribution_share?.Wearable_Sensor_percent}% Sensors`]);
+  }
   const sensorRows = [
     ["Left IMU magnitude", sensor(report.leftImu, "g")],
     ["Left IMU axes", `X ${sensor(report.leftImuX, "g")} / Y ${sensor(report.leftImuY, "g")} / Z ${sensor(report.leftImuZ, "g")}`],
@@ -1792,10 +1773,9 @@ els.startStream.addEventListener("click", async () => {
 
 els.stopStream.addEventListener("click", () => {
   state.capturing = false;
-  state.sensorSubmitted = isSensorCaptureReady();
+  state.sensorSubmitted = state.sampleCount > 0;
   els.streamState.textContent = state.hardwareConnected ? "Connected • capture stopped" : "Hardware disconnected";
   if (state.sensorSubmitted) setNotification("Real sensor capture stopped. The latest MPU6050 and FSR readings are ready for analysis.", true);
-  else setNotification("Capture stopped, but the report needs at least 10 complete sensor samples. Check both MPU6050 and FSR connections.", false);
   updateAll();
 });
 
