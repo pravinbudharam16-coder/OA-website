@@ -990,12 +990,6 @@ main { min-width: 0; padding: 0 34px 34px; }
   border-color: var(--accent);
   color: #fff;
 }
-.report-download-button:disabled {
-  opacity: .45;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
 .report-download-button:hover,
 .report-download-button:focus-visible {
   color: #fff;
