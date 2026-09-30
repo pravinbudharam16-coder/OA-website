@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0f766e" />
     <title>SmartOA Screening Console</title>
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./02_Frontend/assets/css/styles.css?v=10" />
+    <link rel="stylesheet" href="./02_Frontend/assets/css/styles.css?v=23" />
   </head>
   <body>
     <div class="app-shell">
@@ -26,7 +26,6 @@
           <a href="#/occupation" data-route="occupation"><b>04</b><span>Occupation</span><em aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 5v4"/></svg></em></a>
           <a href="#/screening" data-route="screening"><b>05</b><span>Risk Result</span><em aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M9 12h6"/></svg></em></a>
           <a href="#/reports" data-route="reports"><b>06</b><span>Reports</span><em aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 4h12v16H6zM9 8h6M9 12h6M9 16h4"/></svg></em></a>
-          <a href="#/architecture" data-route="architecture"><b>07</b><span>Architecture</span><em aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="7" cy="7" r="2"/><circle cx="17" cy="7" r="2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M9 7h6M7 9v6M17 9v6M9 17h6"/></svg></em></a>
         </nav>
 
         <div class="connection-card">
@@ -115,48 +114,47 @@
 <div class="overview-insights">
             <article class="overview-widget oa-marker-widget">
               <div class="widget-heading">
-                <div><p class="eyebrow">Latest knee analysis • Interactive 3D risk view</p><h3>3D Knee Risk Analysis</h3></div>
+                <div><p class="eyebrow">Latest knee analysis • Interactive leg view</p><h3>Interactive Leg Analysis</h3></div>
                 <span class="chip" id="oaMarkerSource">No screening yet</span>
               </div>
-              <div class="interactive-knee-layout">
-                <div class="interactive-knee-stage" id="kneeRiskStage" aria-label="Interactive knee risk visualization">
-                  <div class="visual-topline"><span>INTERACTIVE RISK VIEW</span><b>● AI overlay</b></div>
-                  <div class="knee-ring ring-a"></div><div class="knee-ring ring-b"></div><div class="knee-ring ring-c"></div>
-                  <div class="knee-3d-scene" id="knee3dScene" aria-label="3D latest knee analysis visualization">
-                    <div class="knee-3d-model">
-                      <div class="knee-femur-3d"><span></span></div>
-                      <div class="knee-joint-3d"><span></span></div>
-                      <div class="knee-tibia-3d"><span></span></div>
-                      <div class="knee-patella-3d"></div>
-                      <div class="knee-risk-overlay" id="kneeRiskOverlay"></div>
-                    </div>
-                    <div class="knee-3d-axis axis-3d-x"></div><div class="knee-3d-axis axis-3d-y"></div>
-                    <span class="knee-3d-label knee-3d-left">MEDIAL</span><span class="knee-3d-label knee-3d-right">LATERAL</span>
-                  </div>
-                  <svg class="knee-visual" viewBox="0 0 420 520" role="img" aria-label="Stylized front view of knee loading and osteoarthritis risk markers">
-                    <g>
-                      <path class="knee-bone femur" d="M175 40 C172 94 177 141 174 188 C171 218 152 231 143 251 C134 271 139 297 156 311 L177 322 C184 296 186 272 210 258 C234 272 236 296 243 322 L264 311 C281 297 286 271 277 251 C268 231 249 218 246 188 C243 141 248 94 245 40 Z"/>
-                      <path class="knee-bone tibia" d="M164 319 C170 351 168 390 159 468 C157 487 168 500 186 502 L234 502 C252 500 263 487 261 468 C252 390 250 351 256 319 C240 329 225 335 210 335 C195 335 180 329 164 319 Z"/>
-                      <ellipse class="patella" cx="210" cy="276" rx="58" ry="64"/>
-                      <path class="load-zone medial-left" d="M155 235 C132 248 125 276 136 302 C141 315 150 325 160 333 C169 320 176 306 179 291 C171 274 163 254 155 235 Z" data-marker="Medial load" tabindex="0"/>
-                      <path class="load-zone medial-right" d="M265 235 C288 248 295 276 284 302 C279 315 270 325 260 333 C251 320 244 306 241 291 C249 274 257 254 265 235 Z" data-marker="Lateral load" tabindex="0"/>
-                      <circle class="hotspot hotspot-load" cx="157" cy="277" r="10" data-marker="Medial load" tabindex="0"/>
-                      <circle class="hotspot hotspot-joint" cx="210" cy="225" r="10" data-marker="Joint-space region" tabindex="0"/>
-                      <circle class="hotspot hotspot-motion" cx="263" cy="277" r="10" data-marker="Movement marker" tabindex="0"/>
-                    </g>
+              <div class="interactive-leg-layout">
+                <div class="interactive-leg-stage" id="legAnalysisStage" aria-label="Interactive leg gait analysis">
+                  <div class="visual-topline"><span>INTERACTIVE LEG ANALYSIS</span><b id="legAnalysisMode">Cursor tracking</b></div>
+                  <svg class="leg-analysis-visual" id="legAnalysisVisual" viewBox="0 0 520 620" role="img" aria-label="Interactive lower-leg movement analysis">
+                    <defs>
+                      <linearGradient id="legBone" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b8b1a4"/><stop offset=".5" stop-color="#f4efe5"/><stop offset="1" stop-color="#c7c0b2"/></linearGradient>
+                    </defs>
+                    <path class="leg-bone" d="M210 44 C188 76 184 118 190 162 L201 255 L190 330 L170 536 C168 563 185 578 211 580 L251 580 C277 578 294 563 292 536 L272 330 L261 255 L272 162 C278 118 274 76 252 44 C240 29 222 29 210 44Z"/>
+                    <ellipse class="leg-knee" cx="231" cy="286" rx="76" ry="62"/>
+                    <path class="leg-joint-line" d="M166 286 C190 264 210 255 231 255 C252 255 272 264 296 286"/>
+                    <circle class="leg-hotspot leg-hotspot-knee" data-leg-marker="Knee movement" cx="231" cy="286" r="12" tabindex="0" role="button" aria-label="Knee movement marker"/>
+                    <circle class="leg-hotspot leg-hotspot-shank" data-leg-marker="Shank motion" cx="210" cy="410" r="10" tabindex="0" role="button" aria-label="Shank motion marker"/>
+                    <circle class="leg-hotspot leg-hotspot-foot" data-leg-marker="Foot loading" cx="232" cy="552" r="10" tabindex="0" role="button" aria-label="Foot loading marker"/>
+                    <path id="legMotionArc" class="leg-motion-arc" d="M104 210 C55 285 70 410 135 466" fill="none"/>
+                    <path id="legCursorRay" class="leg-cursor-ray" d="M231 286 L355 220"/>
+                    <g id="legCursorPoint" class="leg-cursor-point"><circle cx="355" cy="220" r="8"/><circle cx="355" cy="220" r="17"/></g>
+                    <text x="320" y="198" class="leg-axis-label">CURSOR</text>
+                    <text x="82" y="292" class="leg-axis-label">KNEE</text>
+                    <text x="82" y="420" class="leg-axis-label">SHANK</text>
+                    <text x="82" y="558" class="leg-axis-label">FOOT</text>
                   </svg>
-                  <div class="visual-callout callout-right"><small>RISK MARKER</small><strong id="kneeMarkerTitle">Medial load</strong></div>
+                  <div class="visual-callout callout-right"><small>ANALYSIS POINT</small><strong id="legAnalysisMarker">Knee movement</strong></div>
                   <div class="visual-callout callout-left"><small>RISK SCORE</small><strong id="oaMarkerRisk">—</strong></div>
-                  <div class="visual-inspect">Select a marker to inspect</div>
+                  <div class="visual-inspect">Move the cursor over the leg to inspect movement regions</div>
                 </div>
-                <div class="interactive-knee-info">
-                  <div class="marker-risk-card"><span id="kneeMarkerEyebrow">Selected marker</span><strong id="kneeMarkerDetail">Medial loading</strong><small id="oaMarkerRiskMeta">Complete a screening to show the latest result.</small></div>
-                  <div class="marker-points interactive-marker-list">
-                    <button type="button" class="marker-select active" data-marker="Medial load"><i></i><span>Medial loading</span><b>Inspect</b></button>
-                    <button type="button" class="marker-select" data-marker="Joint-space region"><i></i><span>Joint-space region</span><b>Inspect</b></button>
-                    <button type="button" class="marker-select" data-marker="Movement marker"><i></i><span>Movement pattern</span><b>Inspect</b></button>
+                <div class="interactive-leg-info">
+                  <div class="marker-risk-card"><span id="kneeMarkerEyebrow">Latest screening</span><strong id="kneeMarkerDetail">Knee movement</strong><small id="oaMarkerRiskMeta">Complete a screening to show the latest result.</small></div>
+                  <div class="leg-analysis-metrics">
+                    <div><span>Movement angle</span><strong id="legAngleValue">0°</strong></div>
+                    <div><span>Load balance</span><strong id="legLoadValue">—</strong></div>
+                    <div><span>Gait status</span><strong id="legGaitValue">Waiting</strong></div>
                   </div>
-                  <p class="marker-note">Interactive educational visualization for screening context; it is not a diagnostic X-ray.</p>
+                  <div class="marker-points interactive-marker-list">
+                    <button type="button" class="marker-select active" data-leg-marker="Knee movement"><i></i><span>Knee movement</span><b>Inspect</b></button>
+                    <button type="button" class="marker-select" data-leg-marker="Shank motion"><i></i><span>Shank motion</span><b>Inspect</b></button>
+                    <button type="button" class="marker-select" data-leg-marker="Foot loading"><i></i><span>Foot loading</span><b>Inspect</b></button>
+                  </div>
+                  <p class="marker-note">Interactive screening visualization. It reflects available movement/loading data and is not a diagnostic imaging study.</p>
                 </div>
               </div>
             </article>
@@ -167,7 +165,7 @@
           </div>
         </section>
 
-        <section class="page dashboard-grid" id="page-intake" data-page="intake">
+        <section class="page dashboard-grid" id="page-intake" data-page="intake" hidden>
           <div class="module-header" data-module-header="intake"><div><p class="eyebrow">Patient assessment</p><h1>Patient Intake</h1></div><div class="screening-progress" data-progress="intake" aria-label="Screening progress"></div></div>
           <article class="assessment-panel">
             <div class="panel-heading">
@@ -178,61 +176,230 @@
             </div>
 
             <form class="intake-form" id="intakeForm">
-              <label>
-                Patient ID
-                <input id="patientId" type="text" value="" autocomplete="off" required />
-              </label>
-              <label>
-                Patient Name
-                <input id="patientName" type="text" value="" autocomplete="name" required />
-              </label>
-              <label>
-                Age
-                <input id="age" type="number" min="18" max="100" value="" required />
-              </label>
-              <label>
-                Height (cm)
-                <input id="height" type="number" min="100" max="250" step="0.1" value="" required />
-              </label>
-              <label>
-                Weight (kg)
-                <input id="weight" type="number" min="20" max="300" step="0.1" value="" required />
-              </label>
-              <label>
-                BMI (calculated)
-                <input id="bmi" type="number" min="8" max="80" step="0.1" value="" readonly required aria-readonly="true" />
-              </label>
-              <label>
-                Gender
-                <select id="gender" required>
-                  <option value="" selected disabled>Select gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
-              </label>
-              <label>
-                Knee pain
-                <select id="pain" required>
-                  <option value="" selected disabled>Select pain level</option>
-                  <option value="1">Mild</option>
-                  <option value="2">Moderate</option>
-                  <option value="3">Severe</option>
-                </select>
-              </label>
-              <label>
-                Pain duration (days)
-                <input id="painDurationDays" type="number" min="0" max="36500" step="1" value="" required />
-              </label>
-              <label>
-                Mobility limit
-                <select id="mobility" required>
-                  <option value="" selected disabled>Select mobility issue</option>
-                  <option value="0">Low</option>
-                  <option value="1">Medium</option>
-                  <option value="2">High</option>
-                </select>
-              </label>
+              <section class="intake-section" aria-labelledby="patientInformationTitle">
+                <div class="intake-section-heading">
+                  <div>
+                    <p class="eyebrow">Section 1</p>
+                    <h3 id="patientInformationTitle">Patient Information</h3>
+                  </div>
+                  <span class="chip">Required</span>
+                </div>
+                <div class="intake-section-grid">
+                  <label for="patientId">
+                    Patient ID
+                    <input id="patientId" type="text" value="" autocomplete="off" required />
+                  </label>
+                  <label for="patientName">
+                    Patient Name
+                    <input id="patientName" type="text" value="" autocomplete="name" required />
+                  </label>
+                  <label for="age">
+                    Age
+                    <input id="age" type="number" min="18" max="100" value="" required />
+                  </label>
+                  <label for="gender">
+                    Gender
+                    <select id="gender" required>
+                      <option value="" selected disabled>Select gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </label>
+                </div>
+              </section>
+
+              <section class="intake-section" aria-labelledby="bodyMeasurementsTitle">
+                <div class="intake-section-heading">
+                  <div>
+                    <p class="eyebrow">Section 2</p>
+                    <h3 id="bodyMeasurementsTitle">Body Measurements</h3>
+                  </div>
+                  <span class="chip">BMI calculated automatically</span>
+                </div>
+                <div class="intake-section-grid">
+                  <label for="height">
+                    Height (cm)
+                    <input id="height" type="number" min="100" max="250" step="0.1" value="" required />
+                  </label>
+                  <label for="weight">
+                    Weight (kg)
+                    <input id="weight" type="number" min="20" max="300" step="0.1" value="" required />
+                  </label>
+                  <label for="bmi">
+                    BMI (calculated)
+                    <input id="bmi" type="number" min="8" max="80" step="0.1" value="" readonly required aria-readonly="true" />
+                  </label>
+                </div>
+              </section>
+
+              <section class="intake-section" aria-labelledby="clinicalHistoryTitle">
+                <div class="intake-section-heading">
+                  <div>
+                    <p class="eyebrow">Section 3</p>
+                    <h3 id="clinicalHistoryTitle">Clinical History</h3>
+                  </div>
+                  <span class="chip">Required</span>
+                </div>
+                <div class="intake-section-grid">
+                  <label for="priorInjuryHistory">
+                    Prior injury history
+                    <select id="priorInjuryHistory" required>
+                      <option value="" selected disabled>Select history</option>
+                      <option value="No Prior Injury">No Prior Injury</option>
+                      <option value="ACL Tear">ACL Tear</option>
+                      <option value="Repetitive Strain">Repetitive Strain</option>
+                      <option value="Meniscus Tear">Meniscus Tear</option>
+                      <option value="Fracture">Fracture</option>
+                    </select>
+                  </label>
+                </div>
+              </section>
+
+              <section class="intake-section womac-questionnaire-section" aria-labelledby="womacQuestionnaireTitle">
+                <div class="intake-section-heading">
+                  <div>
+                    <p class="eyebrow">Section 4</p>
+                    <h3 id="womacQuestionnaireTitle">WOMAC Questionnaire</h3>
+                    <p class="panel-note">Answer all 24 questions. Select one option for each question. Total score: 0–96.</p>
+                  </div>
+                  <span class="chip">24 questions</span>
+                </div>
+                <div class="womac-scale-note" aria-label="WOMAC scoring scale">
+                  <span><b>0</b> None</span>
+                  <span><b>1</b> Mild</span>
+                  <span><b>2</b> Moderate</span>
+                  <span><b>3</b> Severe</span>
+                  <span><b>4</b> Extreme</span>
+                </div>
+                <div class="womac-sections">
+                <div class="womac-domain">
+                  <div class="womac-domain-heading">
+                    <div><h4>Pain (5 questions)</h4><p>Choose one answer for every question.</p></div>
+                    <span>0–20</span>
+                  </div>
+                  <div class="womac-question-list">
+                    <fieldset class="womac-question">
+                      <legend>1. Pain during walking on a flat surface?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-pain1" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-pain1" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-pain1" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-pain1" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-pain1" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>2. Pain when going up or down stairs?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-pain2" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-pain2" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-pain2" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-pain2" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-pain2" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>3. Pain at night while in bed?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-pain3" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-pain3" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-pain3" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-pain3" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-pain3" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>4. Pain when sitting or lying?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-pain4" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-pain4" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-pain4" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-pain4" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-pain4" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>5. Pain when standing upright?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-pain5" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-pain5" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-pain5" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-pain5" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-pain5" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                  </div>
+                </div>
+                <div class="womac-domain">
+                  <div class="womac-domain-heading">
+                    <div><h4>Stiffness (2 questions)</h4><p>Choose one answer for every question.</p></div>
+                    <span>0–8</span>
+                  </div>
+                  <div class="womac-question-list">
+                    <fieldset class="womac-question">
+                      <legend>6. How much stiffness after first waking in the morning?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-stiffness1" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-stiffness1" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-stiffness1" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-stiffness1" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-stiffness1" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>7. How much stiffness later in the day?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-stiffness2" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-stiffness2" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-stiffness2" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-stiffness2" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-stiffness2" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                  </div>
+                </div>
+                <div class="womac-domain">
+                  <div class="womac-domain-heading">
+                    <div><h4>Physical Function (17 questions)</h4><p>Choose one answer for every question.</p></div>
+                    <span>0–68</span>
+                  </div>
+                  <div class="womac-question-list">
+                    <fieldset class="womac-question">
+                      <legend>8. Difficulty going down stairs?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-function1" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-function1" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-function1" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-function1" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-function1" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>9. Difficulty going up stairs?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-function2" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-function2" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-function2" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-function2" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-function2" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>10. Difficulty getting up from sitting?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-function3" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-function3" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-function3" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-function3" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-function3" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>11. Difficulty standing?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-function4" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-function4" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-function4" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-function4" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-function4" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>12. Difficulty bending to the floor?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-function5" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-function5" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-function5" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-function5" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-function5" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>13. Difficulty walking on a flat surface?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-function6" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-function6" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-function6" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-function6" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-function6" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>14. Difficulty getting in or out of a car?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-function7" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-function7" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-function7" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-function7" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-function7" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>15. Difficulty going shopping?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-function8" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-function8" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-function8" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-function8" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-function8" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>16. Difficulty putting on socks or stockings?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-function9" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-function9" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-function9" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-function9" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-function9" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>17. Difficulty getting out of bed?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-function10" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-function10" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-function10" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-function10" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-function10" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>18. Difficulty taking off socks or stockings?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-function11" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-function11" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-function11" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-function11" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-function11" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>19. Difficulty lying in bed?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-function12" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-function12" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-function12" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-function12" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-function12" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>20. Difficulty getting in or out of the bath?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-function13" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-function13" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-function13" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-function13" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-function13" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>21. Difficulty sitting?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-function14" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-function14" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-function14" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-function14" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-function14" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>22. Difficulty getting on or off the toilet?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-function15" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-function15" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-function15" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-function15" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-function15" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>23. Difficulty doing heavy domestic duties?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-function16" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-function16" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-function16" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-function16" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-function16" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                    <fieldset class="womac-question">
+                      <legend>24. Difficulty doing light domestic duties?</legend>
+                      <div class="womac-options"><label class="womac-option"><input type="radio" name="womac-function17" value="0" required><span>0</span><small>None</small></label><label class="womac-option"><input type="radio" name="womac-function17" value="1" required><span>1</span><small>Mild</small></label><label class="womac-option"><input type="radio" name="womac-function17" value="2" required><span>2</span><small>Moderate</small></label><label class="womac-option"><input type="radio" name="womac-function17" value="3" required><span>3</span><small>Severe</small></label><label class="womac-option"><input type="radio" name="womac-function17" value="4" required><span>4</span><small>Extreme</small></label></div>
+                    </fieldset>
+                  </div>
+                </div>
+                </div>
+                <div class="womac-total">
+                  <span>Total WOMAC Score</span>
+                  <strong id="womacLiveScore">0 / 96</strong>
+                </div>
+              </section>
+
               <div class="form-actions full-width">
                 <button class="primary-button" type="submit">Submit patient information</button>
               </div>
@@ -272,152 +439,46 @@
             </div>
           </article>
 
-          <!-- Random Forest Classifier & Feature Importance Dashboard -->
-          <article class="ml-dashboard-card" id="mlDashboard">
-            <div class="ml-dashboard-header">
-              <div>
-                <p class="eyebrow">Multimodal ML Engine</p>
-                <h3>Random Forest Knee OA Risk Classifier</h3>
-              </div>
-              <span class="ml-model-badge">● Stratified &amp; SMOTE Balanced</span>
-            </div>
 
-            <div class="ml-grid-2">
-              <div class="ml-metric-box">
-                <h4>Questionnaire vs. Sensor Feature Importance Share</h4>
-                <div class="ml-share-bar">
-                  <div class="ml-share-quest" id="mlShareQuest" style="width: 39.6%;"></div>
-                  <div class="ml-share-sensor" id="mlShareSensor" style="width: 60.4%;"></div>
-                </div>
-                <div class="ml-share-legend">
-                  <span class="ml-legend-item"><span class="ml-dot-quest"></span> Intake Questionnaire: <strong id="mlQuestPct">39.6%</strong></span>
-                  <span class="ml-legend-item"><span class="ml-dot-sensor"></span> Wearable Gait Sensors: <strong id="mlSensorPct">60.4%</strong></span>
-                </div>
-
-                <div style="margin-top: 18px;">
-                  <div class="ml-stat-row"><span>Overall Model Test Accuracy:</span><strong style="color: #0f766e;">100.00%</strong></div>
-                  <div class="ml-stat-row"><span>5-Fold Stratified CV Accuracy:</span><strong>100.00% ± 0.00%</strong></div>
-                  <div class="ml-stat-row"><span>Class Balancing Method:</span><strong>SMOTE Oversampling</strong></div>
-                  <div class="ml-stat-row"><span>Preprocessing Pipeline:</span><strong>StandardScaler + OneHotEncoder</strong></div>
-                </div>
-              </div>
-
-              <div class="ml-metric-box">
-                <h4>Confusion Matrix (True vs Predicted Tier)</h4>
-                <table class="cm-table">
-                  <thead>
-                    <tr><th>True \ Pred</th><th>High</th><th>Low</th><th>Moderate</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr><th>High Risk</th><td class="cm-cell-match">60</td><td class="cm-cell-zero">0</td><td class="cm-cell-zero">0</td></tr>
-                    <tr><th>Low Risk</th><td class="cm-cell-zero">0</td><td class="cm-cell-match">135</td><td class="cm-cell-zero">0</td></tr>
-                    <tr><th>Moderate Risk</th><td class="cm-cell-zero">0</td><td class="cm-cell-match">0</td><td class="cm-cell-match">105</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div class="ml-metric-box">
-              <h4>Top Feature Importance Drivers for Clinicians (MDI)</h4>
-              <div class="fi-list" id="fiList">
-                <div class="fi-item">
-                  <span class="fi-name" title="WOMAC Score">WOMAC Score</span>
-                  <div class="fi-bar-container"><div class="fi-bar-fill quest" style="width: 100%;"></div></div>
-                  <span class="fi-pct">18.6%</span>
-                </div>
-                <div class="fi-item">
-                  <span class="fi-name" title="Gait Cycle Variability">Gait Cycle Variability</span>
-                  <div class="fi-bar-container"><div class="fi-bar-fill sensor" style="width: 94.7%;"></div></div>
-                  <span class="fi-pct">17.6%</span>
-                </div>
-                <div class="fi-item">
-                  <span class="fi-name" title="VAS Pain Score">VAS Pain Score</span>
-                  <div class="fi-bar-container"><div class="fi-bar-fill quest" style="width: 92.5%;"></div></div>
-                  <span class="fi-pct">17.2%</span>
-                </div>
-                <div class="fi-item">
-                  <span class="fi-name" title="Stance-Time Asymmetry">Stance-Time Asymmetry</span>
-                  <div class="fi-bar-container"><div class="fi-bar-fill sensor" style="width: 77.8%;"></div></div>
-                  <span class="fi-pct">14.5%</span>
-                </div>
-                <div class="fi-item">
-                  <span class="fi-name" title="Knee ROM (Left)">Knee ROM (Left)</span>
-                  <div class="fi-bar-container"><div class="fi-bar-fill sensor" style="width: 43.0%;"></div></div>
-                  <span class="fi-pct">8.0%</span>
-                </div>
-                <div class="fi-item">
-                  <span class="fi-name" title="Knee ROM (Right)">Knee ROM (Right)</span>
-                  <div class="fi-bar-container"><div class="fi-bar-fill sensor" style="width: 37.8%;"></div></div>
-                  <span class="fi-pct">7.0%</span>
-                </div>
-                <div class="fi-item">
-                  <span class="fi-name" title="Cadence">Cadence (steps/min)</span>
-                  <div class="fi-bar-container"><div class="fi-bar-fill sensor" style="width: 26.4%;"></div></div>
-                  <span class="fi-pct">4.9%</span>
-                </div>
-                <div class="fi-item">
-                  <span class="fi-name" title="Patient Age">Patient Age</span>
-                  <div class="fi-bar-container"><div class="fi-bar-fill quest" style="width: 11.2%;"></div></div>
-                  <span class="fi-pct">2.1%</span>
-                </div>
-              </div>
-            </div>
-          </article>
         </section>
 
         <section class="page sensor-layout" id="page-sensors" data-page="sensors" hidden>
           <div class="module-header" data-module-header="sensors"><div><p class="eyebrow">Movement &amp; loading</p><h1>Sensors</h1></div><div class="screening-progress" data-progress="sensors" aria-label="Screening progress"></div></div>
-          <article class="body-map-panel interactive-sensor-panel">
+          <article class="body-map-panel sensor-connection-panel">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">Interactive sensor placement</p>
-                <h2>2 IMU + 2 FSR • Physical hardware</h2>
+                <p class="eyebrow">Hardware connection status</p>
+                <h2>IMU &amp; Pressure Sensors</h2>
               </div>
+              <span class="chip">ESP32 • 2 IMU + 2 FSR</span>
             </div>
-            <div class="sensor-placement-layout">
-              <div class="sensor-placement-stage" id="sensorPlacementStage" aria-label="Interactive sensor placement guide">
-                <div class="visual-topline"><span>HARDWARE FIT GUIDE</span><b>● PHYSICAL SENSORS</b></div>
-                <div class="placement-grid"></div>
-                <svg class="sensor-placement-visual" viewBox="0 0 520 420" role="img" aria-label="Lower-leg and shoe sensor placement">
-                  
-                  <g class="leg-silhouette">
-                    <path d="M208 48 C202 86 203 125 199 164 C195 201 181 225 177 254 L170 316 C168 335 178 346 197 347 L231 347 C250 346 260 335 258 316 L251 254 C247 225 233 201 229 164 C225 125 226 86 220 48 Z" fill="#e9e3d7"/>
-                    <path d="M171 319 C146 322 115 327 92 337 C75 345 73 359 87 365 L231 365 C247 365 256 356 254 344 C251 330 238 322 224 319 Z" fill="#cfd7d5"/>
-                    <path d="M171 319 C147 322 116 327 92 337" fill="none" stroke="#71858b" stroke-width="3"/>
-                    <path d="M208 48 L208 319" stroke="#d2c2ad" stroke-width="2" stroke-dasharray="6 7" opacity=".55"/>
-                  </g>
-                  <g class="sensor-hotspot imu-hotspot" data-sensor="Left IMU" tabindex="0" role="button" aria-label="Left IMU placement">
-                    <rect x="166" y="202" width="66" height="34" rx="8"/>
-                    <circle cx="177" cy="219" r="5"/><circle cx="221" cy="219" r="5"/>
-                    <text x="199" y="224">IMU</text>
-                  </g>
-                  <g class="sensor-hotspot fsr-hotspot" data-sensor="Left FSR" tabindex="0" role="button" aria-label="Left FSR placement">
-                    <rect x="128" y="327" width="72" height="18" rx="8"/>
-                    <text x="164" y="340">FSR</text>
-                  </g>
-                  <g class="sensor-hotspot right-sensor" data-sensor="Right IMU" tabindex="0" role="button" aria-label="Right IMU placement">
-                    <rect x="290" y="202" width="66" height="34" rx="8"/>
-                    <text x="323" y="224">IMU</text>
-                  </g>
-                  <g class="sensor-hotspot right-sensor" data-sensor="Right FSR" tabindex="0" role="button" aria-label="Right FSR placement">
-                    <rect x="319" y="327" width="72" height="18" rx="8"/>
-                    <text x="355" y="340">FSR</text>
-                  </g>
-                  <text class="placement-guide-label" x="92" y="192">OUTER SHANK</text>
-                  <text class="placement-guide-label" x="94" y="387">INSIDE SHOE / INSOLE</text>
-                </svg>
-                <div class="visual-callout sensor-callout"><small id="sensorPlacementType">SENSOR</small><strong id="sensorPlacementTitle">Left IMU</strong><span id="sensorPlacementHint">Outer side of lower leg, below the knee</span></div>
-                <div class="visual-inspect">Select a sensor to inspect</div>
-              </div>
-              <div class="sensor-placement-info">
-                <div class="sensor-detail-card"><span id="sensorDetailLabel">Selected sensor</span><strong id="sensorDetailName">Left IMU</strong><small id="sensorDetailValue">0.00 g</small><p id="sensorDetailText">Attach the MPU6050 firmly to the outer side of the lower leg, below the knee joint.</p></div>
-                <div class="sensor-choice-list">
-                  <button type="button" class="sensor-choice active" data-sensor="Left IMU"><i></i><span>Left IMU</span><b>Shank</b></button>
-                  <button type="button" class="sensor-choice" data-sensor="Right IMU"><i></i><span>Right IMU</span><b>Shank</b></button>
-                  <button type="button" class="sensor-choice" data-sensor="Left FSR"><i></i><span>Left FSR</span><b>Insole</b></button>
-                  <button type="button" class="sensor-choice" data-sensor="Right FSR"><i></i><span>Right FSR</span><b>Insole</b></button>
+            <div class="sensor-connection-status-grid">
+              <section class="sensor-connection-card" aria-labelledby="imuModuleStatusTitle">
+                <div class="sensor-connection-card-head">
+                  <div>
+                    <p class="eyebrow">Motion sensing</p>
+                    <h3 id="imuModuleStatusTitle">IMU sensors</h3>
+                  </div>
+                  <span class="sensor-status-chip disconnected" id="imuModuleStatus"><i></i> IMU disconnected</span>
                 </div>
-              </div>
+                <p>2 × MPU6050 • Accelerometer + gyroscope</p>
+                <div class="sensor-connection-meta">
+                  <span>Left IMU</span><span>Right IMU</span>
+                </div>
+              </section>
+              <section class="sensor-connection-card" aria-labelledby="pressureModuleStatusTitle">
+                <div class="sensor-connection-card-head">
+                  <div>
+                    <p class="eyebrow">Foot loading</p>
+                    <h3 id="pressureModuleStatusTitle">Pressure sensors</h3>
+                  </div>
+                  <span class="sensor-status-chip disconnected" id="pressureModuleStatus"><i></i> Pressure disconnected</span>
+                </div>
+                <p>2 × FSR • Left and right foot loading</p>
+                <div class="sensor-connection-meta">
+                  <span>Left FSR</span><span>Right FSR</span>
+                </div>
+              </section>
             </div>
           </article>
 
@@ -427,13 +488,13 @@
                 <p class="eyebrow">Live telemetry</p>
                 <h2>Physical sensor telemetry</h2><p class="panel-note">Connect the ESP32 over Bluetooth to capture real MPU6050 and FSR readings. No simulated sensor values are generated.</p>
               </div>
-              <div class="sensor-controls"><span id="streamState" class="chip">Hardware disconnected</span><button class="primary-button compact" id="startStream" type="button">Connect ESP32</button><button class="secondary-button compact" id="stopStream" type="button" hidden>Stop capture</button><button class="secondary-button compact" id="exitStream" type="button" hidden>Disconnect</button><button class="secondary-button compact" id="resetSensors" type="button">Reset readings</button></div>
+              <div class="sensor-controls"><span id="streamState" class="chip">Hardware disconnected</span><button class="primary-button compact" id="startStream" type="button">Connect</button><button class="secondary-button compact" id="submitSensorData" type="button" disabled>Submit</button></div>
             </div>
 
             <section class="sensor-telemetry-section imu-telemetry-section" aria-labelledby="imuTelemetryTitle">
               <div class="sensor-section-heading">
                 <div><p class="eyebrow">IMU sensors</p><h3 id="imuTelemetryTitle">Accelerometer &amp; Gyroscope</h3></div>
-                <span class="chip">MPU6050 × 2</span>
+                <div class="sensor-connection-group"><span class="chip">MPU6050 × 2</span><span class="sensor-status-chip disconnected" id="imuConnectionStatus"><i></i> IMU disconnected</span></div>
               </div>
               <div class="metric-grid sensor-reading-grid imu-reading-grid">
                 <div class="metric"><span>Left accelerometer</span><strong id="leftImu">0.00 g</strong><small id="leftImuAxes">X 0.00 • Y 0.00 • Z 0.00 g</small></div>
@@ -446,7 +507,7 @@
             <section class="sensor-telemetry-section pressure-telemetry-section" aria-labelledby="pressureTelemetryTitle">
               <div class="sensor-section-heading">
                 <div><p class="eyebrow">Pressure sensors</p><h3 id="pressureTelemetryTitle">Foot Loading / FSR</h3></div>
-                <span class="chip">FSR × 2</span>
+                <div class="sensor-connection-group"><span class="chip">FSR × 2</span><span class="sensor-status-chip disconnected" id="pressureConnectionStatus"><i></i> Pressure disconnected</span></div>
               </div>
               <div class="metric-grid sensor-reading-grid pressure-reading-grid">
                 <div class="metric"><span>Left pressure sensor</span><strong id="leftFsr">0 ADC</strong><small id="leftFsrMeta">Raw pressure reading: 0 • 0.00 V</small></div>
@@ -465,6 +526,25 @@
             <section class="sensor-trend-section pressure-trend-section" aria-labelledby="pressureTrendTitle">
               <div class="sensor-section-heading"><div><p class="eyebrow">Pressure trend</p><h3 id="pressureTrendTitle">Left &amp; right FSR pressure readings</h3></div><span class="chip">FSR × 2</span></div>
               <div class="sensor-chart-card"><h4>Foot-loading trend</h4><canvas id="pressureChart" width="900" height="240" aria-label="FSR pressure trend chart"></canvas></div>
+            </section>
+
+            <section class="sensor-feature-section" aria-labelledby="featureExtractionTitle">
+              <div class="sensor-section-heading">
+                <div><p class="eyebrow">Signal processing</p><h3 id="featureExtractionTitle">Calculated gait &amp; loading features</h3><p class="panel-note" id="sensorFeatureSummary">Collect real ESP32 samples to calculate features.</p></div>
+                <span class="chip">Feature extraction</span>
+              </div>
+              <div class="metric-grid sensor-feature-grid">
+                <div class="metric"><span>Step count</span><strong id="featureStepCount">0</strong></div>
+                <div class="metric"><span>Cadence</span><strong id="featureCadence">0 steps/min</strong></div>
+                <div class="metric"><span>Stance-time asymmetry</span><strong id="featureStanceAsymmetry">0.0%</strong></div>
+                <div class="metric"><span>Load distribution</span><strong id="featureLoadRatio">0:0</strong></div>
+                <div class="metric"><span>Heel-strike force proxy</span><strong id="featureHeelStrike">0 / 0 ADC</strong><small>Left / Right</small></div>
+                <div class="metric"><span>Toe-off force proxy</span><strong id="featureToeOff">0 / 0 ADC</strong><small>Left / Right</small></div>
+                <div class="metric"><span>Gait-cycle variability</span><strong id="featureGaitVariability">0.0%</strong></div>
+                <div class="metric"><span>Movement ROM proxy</span><strong id="featureKneeRomLeft">0.0° proxy</strong><small>Left shank tilt excursion</small></div>
+                <div class="metric"><span>Movement ROM proxy</span><strong id="featureKneeRomRight">0.0° proxy</strong><small>Right shank tilt excursion</small></div>
+                <div class="metric"><span>Analysis duration</span><strong id="featureDuration">0.0 s</strong></div>
+              </div>
             </section>
           </article>
         </section>
@@ -598,42 +678,6 @@
             </div>
           </article>
         </section>
-
-        <section class="page architecture-page" id="page-architecture" data-page="architecture" hidden>
-          <div class="module-header" data-module-header="architecture"><div><p class="eyebrow">System design</p><h1>Architecture</h1></div><div class="screening-progress" data-progress="architecture" aria-label="Screening progress"></div></div>
-          <article class="architecture-panel">
-            <div class="panel-heading">
-              <div>
-                <p class="eyebrow">Project flow</p>
-                <h2>Prototype pipeline</h2>
-              </div>
-            </div>
-            <ol class="pipeline">
-              <li><span>1</span>ESP32 reads MPU6050 and FSR values</li>
-              <li><span>2</span>BLE sends compact sensor packets to the PWA</li>
-              <li><span>3</span>Feature extraction compares gait and loading asymmetry</li>
-              <li><span>4</span>ML model estimates screening risk</li>
-              <li><span>5</span>Report is stored locally for offline use</li>
-            </ol>
-          </article>
-
-          <article class="architecture-panel">
-            <div class="panel-heading">
-              <div>
-                <p class="eyebrow">Technology stack</p>
-                <h2>Implementation modules</h2>
-              </div>
-            </div>
-            <div class="module-grid">
-              <div><strong>PWA UI</strong><span>HTML, CSS, JavaScript</span></div>
-              <div><strong>Hardware</strong><span>ESP32, MPU6050, FSR</span></div>
-              <div><strong>Transport</strong><span>BLE packets from ESP32</span></div>
-              <div><strong>ML</strong><span>Python trained model concept</span></div>
-              <div><strong>Storage</strong><span>IndexedDB reports</span></div>
-              <div><strong>Offline</strong><span>Service Worker cache</span></div>
-            </div>
-          </article>
-        </section>
       </main>
     </div>
 
@@ -645,6 +689,6 @@
           </nav>
         </footer>
 
-    <script src="./02_Frontend/assets/js/app.js?v=9"></script>
+    <script src="./02_Frontend/assets/js/app.js?v=11"></script>
   </body>
 </html>

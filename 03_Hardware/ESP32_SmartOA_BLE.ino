@@ -1,7 +1,7 @@
 /* SmartOA physical sensor bridge
  * ESP32 + 2x MPU6050 + 2x FSR
  * BLE transport: Nordic UART Service (NUS)
- * Packet: one JSON object per line, every 100 ms.
+ * Packet: compact CSV per line every 100 ms (12 IMU axes + 2 FSR + 2 MPU status flags).
  *
  * Wiring (ESP32 DevKit):
  * MPU6050 #1: VCC->3V3, GND->GND, SDA->GPIO21, SCL->GPIO22, AD0->GND (0x68)
@@ -116,10 +116,14 @@ void loop() {
   float leftV = leftFsr * 3.3f / 4095.0f;
   float rightV = rightFsr * 3.3f / 4095.0f;
 
-  char packet[420];
+  // Compact CSV packet keeps the notification comfortably below common BLE
+  // notification payload limits while carrying all 12 IMU axes + 2 FSR values
+  // + 2 MPU health flags. The web app also accepts the previous JSON format.
+  char packet[180];
   snprintf(packet, sizeof(packet),
-    "{\"leftImuX\":%.4f,\"leftImuY\":%.4f,\"leftImuZ\":%.4f,\"leftGyroX\":%.3f,\"leftGyroY\":%.3f,\"leftGyroZ\":%.3f,\"rightImuX\":%.4f,\"rightImuY\":%.4f,\"rightImuZ\":%.4f,\"rightGyroX\":%.3f,\"rightGyroY\":%.3f,\"rightGyroZ\":%.3f,\"leftFsr\":%d,\"rightFsr\":%d,\"leftFsrVoltage\":%.3f,\"rightFsrVoltage\":%.3f,\"leftMpuOk\":%s,\"rightMpuOk\":%s}\n",
-    lx,ly,lz,lgx,lgy,lgz,rx,ry,rz,rgx,rgy,rgz,leftFsr,rightFsr,leftV,rightV,leftOk?"true":"false",rightOk?"true":"false");
+    "%.4f,%.4f,%.4f,%.3f,%.3f,%.3f,%.4f,%.4f,%.4f,%.3f,%.3f,%.3f,%d,%d,%d,%d\n",
+    lx,ly,lz,lgx,lgy,lgz,rx,ry,rz,rgx,rgy,rgz,
+    leftFsr,rightFsr,leftOk ? 1 : 0,rightOk ? 1 : 0);
 
   if (deviceConnected && txCharacteristic) {
     txCharacteristic->setValue((uint8_t*)packet, strlen(packet));

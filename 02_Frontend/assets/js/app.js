@@ -6,6 +6,18 @@ const state = {
   hardwareCharacteristic: null,
   packetBuffer: "",
   sampleCount: 0,
+  sensorSamples: [],
+  sensorFeatures: null,
+  captureStartedAt: null,
+  captureEndedAt: null,
+  imuConnected: false,
+  pressureConnected: false,
+  sensorQuality: {
+    validSamples: 0,
+    invalidSamples: 0,
+    lastMissingFields: [],
+    lastPacketAt: null,
+  },
   tick: 0,
   history: Array.from({ length: 48 }, () => ({
     leftImu: 0,
@@ -46,9 +58,8 @@ const els = {
   weight: document.querySelector("#weight"),
   bmi: document.querySelector("#bmi"),
   gender: document.querySelector("#gender"),
-  pain: document.querySelector("#pain"),
-  mobility: document.querySelector("#mobility"),
-  painDurationDays: document.querySelector("#painDurationDays"),
+  womacScore: document.querySelector("#womacScore"),
+  womacScoreDisplay: document.querySelector("#womacScoreDisplay"),
   intakeSubmitStatus: document.querySelector("#intakeSubmitStatus"),
   occupationSubmitStatus: document.querySelector("#occupationSubmitStatus"),
   riskScore: document.querySelector("#riskScore"),
@@ -71,14 +82,21 @@ const els = {
   imuAccelChart: document.querySelector("#imuAccelChart"),
   imuGyroChart: document.querySelector("#imuGyroChart"),
   pressureChart: document.querySelector("#pressureChart"),
+  sensorFeatureSummary: document.querySelector("#sensorFeatureSummary"),
+  featureStepCount: document.querySelector("#featureStepCount"),
+  featureCadence: document.querySelector("#featureCadence"),
+  featureStanceAsymmetry: document.querySelector("#featureStanceAsymmetry"),
+  featureLoadRatio: document.querySelector("#featureLoadRatio"),
+  featureHeelStrike: document.querySelector("#featureHeelStrike"),
+  featureToeOff: document.querySelector("#featureToeOff"),
+  featureGaitVariability: document.querySelector("#featureGaitVariability"),
+  featureKneeRomLeft: document.querySelector("#featureKneeRomLeft"),
+  featureKneeRomRight: document.querySelector("#featureKneeRomRight"),
+  featureDuration: document.querySelector("#featureDuration"),
   startStream: document.querySelector("#startStream"),
-  stopStream: document.querySelector("#stopStream"),
-  exitStream: document.querySelector("#exitStream"),
   streamState: document.querySelector("#streamState"),
-  resetSensors: document.querySelector("#resetSensors"),
+  submitSensorData: document.querySelector("#submitSensorData"),
   connectionLabel: document.querySelector("#connectionLabel"),
-  clearReports: document.querySelector("#clearReports"),
-  reportList: document.querySelector("#reportList"),
   fullReportPreview: document.querySelector("#fullReportPreview"),
   dbTableBody: document.querySelector("#dbTableBody"),
   dbRecordCount: document.querySelector("#dbRecordCount"),
@@ -98,10 +116,6 @@ const els = {
   workerRole: document.querySelector("#workerRole"),
   logoutButton: document.querySelector("#logoutButton"),
   notificationButton: document.querySelector("#notificationButton"),
-  mlShareQuest: document.querySelector("#mlShareQuest"),
-  mlShareSensor: document.querySelector("#mlShareSensor"),
-  mlQuestPct: document.querySelector("#mlQuestPct"),
-  mlSensorPct: document.querySelector("#mlSensorPct"),
   notificationBar: document.querySelector("#notificationBar"),
   notificationClose: document.querySelector("#notificationClose"),
   notificationText: document.querySelector("#notificationText"),
@@ -113,18 +127,21 @@ const els = {
   oaMarkerSource: document.querySelector("#oaMarkerSource"),
   oaMarkerRisk: document.querySelector("#oaMarkerRisk"),
   oaMarkerRiskMeta: document.querySelector("#oaMarkerRiskMeta"),
-  kneeRiskStage: document.querySelector("#kneeRiskStage"),
-  kneeMarkerTitle: document.querySelector("#kneeMarkerTitle"),
+  legAnalysisStage: document.querySelector("#legAnalysisStage"),
+  legAnalysisVisual: document.querySelector("#legAnalysisVisual"),
+  legAnalysisMarker: document.querySelector("#legAnalysisMarker"),
+  legAngleValue: document.querySelector("#legAngleValue"),
+  legLoadValue: document.querySelector("#legLoadValue"),
+  legGaitValue: document.querySelector("#legGaitValue"),
+  legCursorPoint: document.querySelector("#legCursorPoint"),
+  legCursorRay: document.querySelector("#legCursorRay"),
+  legAnalysisMode: document.querySelector("#legAnalysisMode"),
+  imuConnectionStatus: document.querySelector("#imuConnectionStatus"),
+  pressureConnectionStatus: document.querySelector("#pressureConnectionStatus"),
+  imuModuleStatus: document.querySelector("#imuModuleStatus"),
+  pressureModuleStatus: document.querySelector("#pressureModuleStatus"),
   kneeMarkerDetail: document.querySelector("#kneeMarkerDetail"),
   kneeMarkerEyebrow: document.querySelector("#kneeMarkerEyebrow"),
-  sensorPlacementStage: document.querySelector("#sensorPlacementStage"),
-  sensorPlacementType: document.querySelector("#sensorPlacementType"),
-  sensorPlacementTitle: document.querySelector("#sensorPlacementTitle"),
-  sensorPlacementHint: document.querySelector("#sensorPlacementHint"),
-  sensorDetailLabel: document.querySelector("#sensorDetailLabel"),
-  sensorDetailName: document.querySelector("#sensorDetailName"),
-  sensorDetailValue: document.querySelector("#sensorDetailValue"),
-  sensorDetailText: document.querySelector("#sensorDetailText"),
   recentScreenings: document.querySelector("#recentScreenings"),
   overviewScreeningCount: document.querySelector("#overviewScreeningCount"),
   overviewLatestRisk: document.querySelector("#overviewLatestRisk"),
@@ -234,10 +251,6 @@ const routes = {
   reports: {
     title: "Offline patient report history",
     eyebrow: "",
-  },
-  architecture: {
-    title: "SmartOA project architecture",
-    eyebrow: "Prototype modules and flow",
   },
 };
 
@@ -517,9 +530,9 @@ const workflowSteps = [
 
 const translations = {
   en: {
-    nav: { overview:"Overview", intake:"Patient Intake", sensors:"Sensors", occupation:"Occupation", risk:"Risk Result", reports:"Reports", architecture:"Architecture" },
-    module: { overview:"Overview", intake:"Patient Intake", sensors:"Sensors", occupation:"Occupation", screening:"Risk Result", reports:"Reports", architecture:"Architecture" },
-    eyebrow: { overview:"Healthcare worker dashboard", intake:"Patient assessment", sensors:"Movement & loading", occupation:"Risk context", screening:"AI-assisted analysis", reports:"Saved screening records", architecture:"System design" },
+    nav: { overview:"Overview", intake:"Patient Intake", sensors:"Sensors", occupation:"Occupation", risk:"Risk Result", reports:"Reports" },
+    module: { overview:"Overview", intake:"Patient Intake", sensors:"Sensors", occupation:"Occupation", screening:"Risk Result", reports:"Reports" },
+    eyebrow: { overview:"Healthcare worker dashboard", intake:"Patient assessment", sensors:"Movement & loading", occupation:"Risk context", screening:"AI-assisted analysis", reports:"Saved screening records" },
     progress:"Screening progress", step:"Step", of:"of", complete:"complete", current:"Current", done:"Done",
     settings:"Settings", worker:"Healthcare worker", mode:"Mode: Offline-first", language:"Language", logout:"Logout",
     buttons:{ start:"Start", stop:"Stop", exit:"Exit", reset:"Reset readings", submitPatient:"Submit patient information", submitOccupation:"Submit occupation information", save:"Save & Download PDF report", clear:"Clear", viewAll:"View all →" },
@@ -528,13 +541,12 @@ const translations = {
     occupation:{ activity:"Work activity", assessment:"Occupation assessment", type:"Occupation type", standing:"Daily standing hours", lifting:"Lifting frequency", repetitive:"Repetitive movements", impact:"Occupational impact" },
     risk:{ result:"Screening result", summary:"Combining symptoms, BMI, gait asymmetry, foot loading imbalance and occupation." },
     reports:{ saved:"Saved reports", records:"Patient records", preview:"Report preview", current:"Current screening", date:"Date & Time", patient:"Patient", riskScore:"Risk score", status:"Status", occupation:"Occupation" },
-    overview:{ history:"History", recent:"Recent Screening", start:"Start new screening", workflow:"Screening workflow", workflowHint:"Move through the modules in order" },
-    architecture:{ design:"System design" }
+    overview:{ history:"History", recent:"Recent Screening", start:"Start new screening", workflow:"Screening workflow", workflowHint:"Move through the modules in order" }
   },
   as: {
-    nav:{ overview:"সাৰাংশ", intake:"ৰোগীৰ তথ্য", sensors:"চেন্সৰ", occupation:"পেছা", risk:"ঝুঁকিৰ ফলাফল", reports:"প্ৰতিবেদন", architecture:"স্থাপত্য" },
-    module:{ overview:"সাৰাংশ", intake:"ৰোগীৰ তথ্য", sensors:"চেন্সৰ", occupation:"পেছা", screening:"ঝুঁকিৰ ফলাফল", reports:"প্ৰতিবেদন", architecture:"স্থাপত্য" },
-    eyebrow:{ overview:"স্বাস্থ্যকৰ্মীৰ ডেশ্বব'ৰ্ড", intake:"ৰোগীৰ মূল্যায়ন", sensors:"চলন আৰু চাপ", occupation:"ঝুঁকিৰ প্ৰসংগ", screening:"AI-সহায়ক বিশ্লেষণ", reports:"সংৰক্ষিত স্ক্ৰিনিং ৰেকৰ্ড", architecture:"চিস্টেম ডিজাইন" },
+    nav:{ overview:"সাৰাংশ", intake:"ৰোগীৰ তথ্য", sensors:"চেন্সৰ", occupation:"পেছা", risk:"ঝুঁকিৰ ফলাফল", reports:"প্ৰতিবেদন" },
+    module:{ overview:"সাৰাংশ", intake:"ৰোগীৰ তথ্য", sensors:"চেন্সৰ", occupation:"পেছা", screening:"ঝুঁকিৰ ফলাফল", reports:"প্ৰতিবেদন" },
+    eyebrow:{ overview:"স্বাস্থ্যকৰ্মীৰ ডেশ্বব'ৰ্ড", intake:"ৰোগীৰ মূল্যায়ন", sensors:"চলন আৰু চাপ", occupation:"ঝুঁকিৰ প্ৰসংগ", screening:"AI-সহায়ক বিশ্লেষণ", reports:"সংৰক্ষিত স্ক্ৰিনিং ৰেকৰ্ড" },
     progress:"স্ক্ৰিনিং অগ্ৰগতি", step:"ধাপ", of:"ৰ", complete:"সম্পূৰ্ণ", current:"বৰ্তমান", done:"সম্পূৰ্ণ", settings:"ছেটিংছ", worker:"স্বাস্থ্যকৰ্মী", mode:"ম'ড: অফলাইন-প্ৰথম", language:"ভাষা", logout:"লগআউট",
     buttons:{ start:"আৰম্ভ", stop:"বন্ধ", exit:"বাহিৰ", reset:"পঢ়া মান ৰিছেট", submitPatient:"ৰোগীৰ তথ্য দাখিল", submitOccupation:"পেছাৰ তথ্য দাখিল", save:"সংৰক্ষণ আৰু PDF ডাউনলোড", clear:"মচক", viewAll:"সকলো চাওক →" },
     intake:{ context:"ক্লিনিকেল তথ্য", required:"প্ৰয়োজনীয় তথ্য", id:"ৰোগী ID", name:"ৰোগীৰ নাম", age:"বয়স", height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"হাঁুৰ বিষ", painDuration:"বিষৰ সময়কাল (দিন)", mobility:"চলাচল সীমাবদ্ধতা", selectPain:"বিষৰ স্তৰ বাছক", selectMobility:"চলাচল সমস্যা বাছক" },
@@ -542,12 +554,12 @@ const translations = {
     occupation:{ activity:"কৰ্ম কাৰ্যকলাপ", assessment:"পেছাৰ মূল্যায়ন", type:"পেছাৰ ধৰণ", standing:"দৈনিক থিয় হৈ থকা ঘণ্টা", lifting:"ভাৰ তোলাৰ সঘনতা", repetitive:"পুনৰাবৃত্তিমূলক চলন", impact:"পেছাগত প্ৰভাৱ" },
     risk:{ result:"স্ক্ৰিনিং ফলাফল", summary:"লক্ষণ, BMI, খোজৰ অসমতা, ভৰিৰ চাপ আৰু পেছা একেলগে বিশ্লেষণ কৰা হৈছে।" },
     reports:{ saved:"সংৰক্ষিত প্ৰতিবেদন", records:"ৰোগীৰ ৰেকৰ্ড", preview:"প্ৰতিবেদন পূৰ্বদৰ্শন", current:"বৰ্তমান স্ক্ৰিনিং", date:"তাৰিখ আৰু সময়", patient:"ৰোগী", riskScore:"ঝুঁকি স্ক'ৰ", status:"অৱস্থা", occupation:"পেছা" },
-    overview:{ history:"ইতিহাস", recent:"শেহতীয়া স্ক্ৰিনিং", start:"নতুন স্ক্ৰিনিং আৰম্ভ", workflow:"স্ক্ৰিনিং ধাপ", workflowHint:"ধাপসমূহ ক্ৰম অনুসৰি সম্পূৰ্ণ কৰক" }, architecture:{ design:"চিস্টেম ডিজাইন" }
+    overview:{ history:"ইতিহাস", recent:"শেহতীয়া স্ক্ৰিনিং", start:"নতুন স্ক্ৰিনিং আৰম্ভ", workflow:"স্ক্ৰিনিং ধাপ", workflowHint:"ধাপসমূহ ক্ৰম অনুসৰি সম্পূৰ্ণ কৰক" }
   },
   bn: {
-    nav:{ overview:"ওভারভিউ", intake:"রোগীর তথ্য", sensors:"সেন্সর", occupation:"পেশা", risk:"ঝুঁকির ফলাফল", reports:"রিপোর্ট", architecture:"আর্কিটেকচার" },
-    module:{ overview:"ওভারভিউ", intake:"রোগীর তথ্য", sensors:"সেন্সর", occupation:"পেশা", screening:"ঝুঁকির ফলাফল", reports:"রিপোর্ট", architecture:"আর্কিটেকচার" },
-    eyebrow:{ overview:"স্বাস্থ্যকর্মী ড্যাশবোর্ড", intake:"রোগী মূল্যায়ন", sensors:"চলন ও চাপ", occupation:"ঝুঁকির প্রসঙ্গ", screening:"AI-সহায়ক বিশ্লেষণ", reports:"সংরক্ষিত স্ক্রিনিং রেকর্ড", architecture:"সিস্টেম ডিজাইন" },
+    nav:{ overview:"ওভারভিউ", intake:"রোগীর তথ্য", sensors:"সেন্সর", occupation:"পেশা", risk:"ঝুঁকির ফলাফল", reports:"রিপোর্ট" },
+    module:{ overview:"ওভারভিউ", intake:"রোগীর তথ্য", sensors:"সেন্সর", occupation:"পেশা", screening:"ঝুঁকির ফলাফল", reports:"রিপোর্ট" },
+    eyebrow:{ overview:"স্বাস্থ্যকর্মী ড্যাশবোর্ড", intake:"রোগী মূল্যায়ন", sensors:"চলন ও চাপ", occupation:"ঝুঁকির প্রসঙ্গ", screening:"AI-সহায়ক বিশ্লেষণ", reports:"সংরক্ষিত স্ক্রিনিং রেকর্ড" },
     progress:"স্ক্রিনিং অগ্রগতি", step:"ধাপ", of:"এর", complete:"সম্পূর্ণ", current:"বর্তমান", done:"সম্পন্ন", settings:"সেটিংস", worker:"স্বাস্থ্যকর্মী", mode:"মোড: অফলাইন-প্রথম", language:"ভাষা", logout:"লগআউট",
     buttons:{ start:"শুরু", stop:"বন্ধ", exit:"বেরিয়ে যান", reset:"রিডিং রিসেট", submitPatient:"রোগীর তথ্য জমা দিন", submitOccupation:"পেশার তথ্য জমা দিন", save:"সংরক্ষণ ও PDF ডাউনলোড", clear:"মুছুন", viewAll:"সব দেখুন →" },
     intake:{ context:"ক্লিনিক্যাল তথ্য", required:"প্রয়োজনীয় তথ্য", id:"রোগী ID", name:"রোগীর নাম", age:"বয়স", height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"হাঁটুর ব্যথা", painDuration:"ব্যথার সময়কাল (দিন)", mobility:"চলাচলের সীমাবদ্ধতা", selectPain:"ব্যথার মাত্রা নির্বাচন করুন", selectMobility:"চলাচলের সমস্যা নির্বাচন করুন" },
@@ -555,17 +567,18 @@ const translations = {
     occupation:{ activity:"কাজের কার্যকলাপ", assessment:"পেশা মূল্যায়ন", type:"পেশার ধরন", standing:"প্রতিদিন দাঁড়িয়ে থাকার ঘণ্টা", lifting:"ভার তোলার হার", repetitive:"পুনরাবৃত্ত চলন", impact:"পেশাগত প্রভাব" },
     risk:{ result:"স্ক্রিনিং ফলাফল", summary:"উপসর্গ, BMI, হাঁটার অসমতা, পায়ের চাপের ভারসাম্যহীনতা ও পেশা একত্রে বিশ্লেষণ করা হচ্ছে।" },
     reports:{ saved:"সংরক্ষিত রিপোর্ট", records:"রোগীর রেকর্ড", preview:"রিপোর্ট পূর্বরূপ", current:"বর্তমান স্ক্রিনিং", date:"তারিখ ও সময়", patient:"রোগী", riskScore:"ঝুঁকি স্কোর", status:"অবস্থা", occupation:"পেশা" },
-    overview:{ history:"ইতিহাস", recent:"সাম্প্রতিক স্ক্রিনিং", start:"নতুন স্ক্রিনিং শুরু", workflow:"স্ক্রিনিং ধাপ", workflowHint:"ধাপগুলো ক্রমানুসারে সম্পূর্ণ করুন" }, architecture:{ design:"সিস্টেম ডিজাইন" }
+    overview:{ history:"ইতিহাস", recent:"সাম্প্রতিক স্ক্রিনিং", start:"নতুন স্ক্রিনিং শুরু", workflow:"স্ক্রিনিং ধাপ", workflowHint:"ধাপগুলো ক্রমানুসারে সম্পূর্ণ করুন" }
   },
-  brx: { nav:{overview:"फिननाय",intake:"हाब्रि फोरों",sensors:"सेन्सर",occupation:"थाखाय",risk:"रिस्क रिजाल्ट",reports:"रिपोर्ट",architecture:"आर्किटेक्चर"}, module:{overview:"फिननाय",intake:"हाब्रि फोरों",sensors:"सेन्सर",occupation:"थाखाय",screening:"रिस्क रिजाल्ट",reports:"रिपोर्ट",architecture:"आर्किटेक्चर"}, eyebrow:{overview:"हेल्थकेयर वर्कार डेशबोर्ड",intake:"हाब्रि मुल्यायन",sensors:"जायगा आरो लोडिं",occupation:"रिस्क संदर्भ",screening:"AI साहाज्य विश्लेषण",reports:"सेभ स्क्रिनिं रेकर्ड",architecture:"सिस्टम डिजाइन"}, progress:"स्क्रिनिं प्रोग्रेस",step:"स्टेप",of:"नि",complete:"फुरा",current:"दानो",done:"फुरा",settings:"सेटिंग",worker:"हेल्थकेयर वर्कार",mode:"मोड: अफलाइन-फोरों",language:"राव",logout:"लॉगआउट",buttons:{start:"जागाय",stop:"बन्द",exit:"बाहेर",reset:"रीडिंग रिसेट",submitPatient:"हाब्रि फोरों दाथाय",submitOccupation:"थाखाय दाथाय",save:"सेभ आरो PDF डाउनलोड",clear:"खालाम",viewAll:"गासै नाय →"},intake:{context:"क्लिनिकल फोरों",required:"जरुरी फोरों",id:"हाब्रि ID",name:"हाब्रि मुं",age:"बयस",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"जानु दुखु",painDuration:"दुखु सम (दिन)",mobility:"नावजाबाय सीमाय",selectPain:"दुखु लेभेल सायख",selectMobility:"नावजाबाय समस्या सायख"},sensors:{placement:"सेन्सर जायगा",setup:"2 IMU + 2 FSR सेटअप",telemetry:"लाइभ टेलिमेट्री",movement:"नावजाबाय आरो लोडिं",note:"फिजिकल ESP32/BLE हार्डवेर जाबाय रियल सेन्सर रिडिंग लाबो।"},occupation:{activity:"खामानि",assessment:"थाखाय मुल्यायन",type:"थाखाय रोखोम",standing:"दिनै थांनाय घण्टा",lifting:"बोझा लाबनाय सघनता",repetitive:"दोहोरायनाय नावजाबाय",impact:"थाखाय असर"},risk:{result:"स्क्रिनिं रिजाल्ट",summary:"लक्षण, BMI, गैत असमाय, फराय लोडिं आरो थाखाय एकलोगे विश्लेषण।"},reports:{saved:"सेभ रिपोर्ट",records:"हाब्रि रेकर्ड",preview:"रिपोर्ट नाय",current:"दानो स्क्रिनिं",date:"दिन आरो सम",patient:"हाब्रि",riskScore:"रिस्क स्कोर",status:"अवस्था",occupation:"थाखाय"},overview:{history:"जिरायती",recent:"दानो स्क्रिनिं",start:"नोगोर स्क्रिनिं जागाय",workflow:"स्क्रिनिं स्टेप",workflowHint:"स्टेप फोरों गोनांनाय"},architecture:{design:"सिस्टम डिजाइन"}},
-  mni: { nav:{overview:"ꯃꯈꯥ ꯑꯣꯏꯕ",intake:"ꯂꯩꯄꯥꯛ ꯂꯣꯏꯁꯤꯟ",sensors:"ꯁꯦꯟꯁꯔ",occupation:"ꯊꯧꯔꯥꯡ",risk:"ꯔꯤꯁ꯭ꯀ ꯔꯤꯖꯜꯇ",reports:"ꯔꯤꯄꯣꯔꯠ",architecture:"ꯁꯤꯁꯇꯦꯝ ꯃꯈꯥ"}, module:{overview:"ꯃꯈꯥ ꯑꯣꯏꯕ",intake:"ꯂꯩꯄꯥꯛ ꯂꯣꯏꯁꯤꯟ",sensors:"ꯁꯦꯟꯁꯔ",occupation:"ꯊꯧꯔꯥꯡ",screening:"ꯔꯤꯁ꯭ꯀ ꯔꯤꯖꯜꯇ",reports:"ꯔꯤꯄꯣꯔꯠ",architecture:"ꯁꯤꯁꯇꯦꯝ ꯃꯈꯥ"}, eyebrow:{overview:"ꯍꯦꯜꯊꯀꯦꯔ ꯋꯥꯔꯀꯔ ꯗꯦꯁꯕꯣꯔꯗ",intake:"ꯂꯩꯄꯥꯛ ꯃꯇꯦꯡ",sensors:"ꯃꯥꯔꯣꯜ ꯑꯃꯁꯨꯡ ꯂꯣꯗꯤꯡ",occupation:"ꯔꯤꯁ꯭ꯀ ꯄꯥꯡꯊꯣꯛ",screening:"AI-ꯆꯥꯡꯁꯤꯟꯕ ꯑꯦꯅꯥꯂꯥꯏꯁꯤꯁ",reports:"ꯁꯦꯚ ꯆꯦꯛꯀꯤꯡ ꯔꯦꯀꯣꯔꯗ",architecture:"ꯁꯤꯁꯇꯦꯝ ꯗꯤꯖꯥꯏꯟ"}, progress:"ꯆꯦꯛꯀꯤꯡ ꯄ꯭ꯔꯣꯒ꯭ꯔꯦꯁ",step:"ꯁ꯭ꯇꯦꯞ",of:"ꯒꯤ",complete:"ꯂꯣꯏꯁꯤꯜꯂꯕ",current:"ꯍꯧꯖꯤꯛ",done:"ꯂꯣꯏꯁꯤꯜꯂꯕ",settings:"ꯁꯦꯇꯤꯡ",worker:"ꯍꯦꯜꯊꯀꯦꯔ ꯋꯥꯔꯀꯔ",mode:"ꯃꯣꯗ: ꯑꯣꯐꯂꯥꯏꯟ",language:"ꯂꯣꯟ",logout:"ꯂꯣꯒꯑꯥꯎꯠ",buttons:{start:"ꯍꯧꯖꯤꯟꯕ",stop:"ꯂꯣꯏꯁꯤꯟꯕ",exit:"ꯅꯣꯡꯃꯥ",reset:"ꯔꯤꯗꯤꯡ ꯔꯤꯁꯦꯠ",submitPatient:"ꯂꯩꯄꯥꯛ ꯐꯣꯔꯣꯝ ꯄꯤꯕ",submitOccupation:"ꯊꯧꯔꯥꯡ ꯐꯣꯔꯣꯝ ꯄꯤꯕ",save:"ꯁꯦꯚ ꯑꯃꯁꯨꯡ PDF ꯗꯥꯎꯅꯂꯣꯗ",clear:"ꯂꯣꯏꯁꯤꯟꯕ",viewAll:"ꯄꯨꯝꯕ ꯎꯅꯕ →"}, intake:{context:"ꯀ꯭ꯂꯤꯅꯤꯀꯦꯜ ꯐꯣꯔꯣꯝ",required:"ꯃꯇꯨꯡ ꯄꯥꯡꯊꯣꯛꯄ ꯐꯣꯔꯣꯝ",id:"ꯂꯩꯄꯥꯛ ID",name:"ꯂꯩꯄꯥꯛ ꯃꯤꯡ",age:"ꯊꯧ",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"ꯅꯨꯡꯁꯤ ꯂꯣꯟ",painDuration:"ꯅꯨꯡꯁꯤ ꯃꯇꯥꯡ (ꯅꯨꯃꯤꯠ)",mobility:"ꯃꯥꯔꯣꯜ ꯂꯣꯏꯁꯤꯟꯕ",selectPain:"ꯅꯨꯡꯁꯤ ꯂꯦꯚꯦꯜ ꯁꯥꯏꯈ",selectMobility:"ꯃꯥꯔꯣꯜ ꯁꯥꯏꯈ"}, sensors:{placement:"ꯁꯦꯟꯁꯔ ꯑꯃꯁꯨꯡ ꯊꯝꯄ",setup:"2 IMU + 2 FSR ꯁꯦꯠꯑꯞ",telemetry:"ꯂꯥꯏꯚ ꯇꯦꯂꯤꯃꯦꯇ꯭ꯔꯤ",movement:"ꯃꯥꯔꯣꯜ ꯑꯃꯁꯨꯡ ꯂꯣꯗꯤꯡ",note:"ꯐꯤꯖꯤꯀꯦꯜ ESP32/BLE ꯍꯥꯔꯗꯋꯦꯔ ꯁꯝꯖꯤꯟꯅꯥ ꯔꯤꯌꯦꯜ ꯁꯦꯟꯁꯔ ꯔꯤꯗꯤꯡ ꯂꯧꯕꯤꯌꯨ।"}, occupation:{activity:"ꯊꯧꯔꯥꯡ",assessment:"ꯊꯧꯔꯥꯡ ꯃꯇꯦꯡ",type:"ꯊꯧꯔꯥꯡ ꯃꯈꯥ",standing:"ꯅꯨꯃꯤꯠ ꯁꯤꯡꯖꯤꯟꯕ ꯄꯨꯡ",lifting:"ꯂꯥꯡꯕ ꯁꯥꯏꯅꯕ",repetitive:"ꯑꯃꯁꯨꯡ ꯑꯃꯁꯨꯡ ꯍꯥꯡꯕ",impact:"ꯊꯧꯔꯥꯡ ꯑꯁꯤ"}, risk:{result:"ꯆꯦꯛꯀꯤꯡ ꯔꯤꯖꯜꯇ",summary:"ꯁꯤꯝꯇꯣꯝ, BMI, ꯆꯥꯡꯁꯤꯟ ꯑꯁꯝꯕ, ꯐꯨꯠ ꯂꯣꯗꯤꯡ ꯑꯃꯁꯨꯡ ꯊꯧꯔꯥꯡ ꯄꯨꯝꯅꯃꯛ ꯑꯦꯅꯥꯂꯥꯏꯁꯤꯁ ꯇꯧꯏ"}, reports:{saved:"ꯁꯦꯚ ꯔꯤꯄꯣꯔꯠ",records:"ꯂꯩꯄꯥꯛ ꯔꯦꯀꯣꯔꯗ",preview:"ꯔꯤꯄꯣꯔꯠ ꯎꯠꯄ",current:"ꯍꯧꯖꯤꯛ ꯆꯦꯛꯀꯤꯡ",date:"ꯇꯥꯔꯤꯈ ꯑꯃꯁꯨꯡ ꯃꯇꯝ",patient:"ꯂꯩꯄꯥꯛ",riskScore:"ꯔꯤꯁ꯭ꯀ ꯁ꯭ꯀꯣꯔ",status:"ꯁ꯭ꯇꯦꯇꯁ",occupation:"ꯊꯧꯔꯥꯡ"}, overview:{history:"ꯍꯤꯁꯇꯔꯤ",recent:"ꯅꯨꯡꯉꯥꯏ ꯆꯦꯛꯀꯤꯡ",start:"ꯑꯅꯧꯕ ꯆꯦꯛꯀꯤꯡ ꯍꯧꯖꯤꯟꯕ",workflow:"ꯆꯦꯛꯀꯤꯡ ꯁ꯭ꯇꯦꯞ",workflowHint:"ꯁ꯭ꯇꯦꯞ ꯄꯨꯝꯅꯃꯛ ꯑꯅꯨꯕꯥ ꯆꯠꯂꯨ"}, architecture:{design:"ꯁꯤꯁꯇꯦꯝ ꯗꯤꯖꯥꯏꯟ"}},
-  kha: { nav:{overview:"Kyndon",intake:"Ka jingtip u nongpang",sensors:"Ki sensor",occupation:"Kamai",risk:"Ka jingmih jong ka jingma",reports:"Ki report",architecture:"Ka jingtei"}, module:{overview:"Kyndon",intake:"Ka jingtip u nongpang",sensors:"Ki sensor",occupation:"Kamai",screening:"Ka jingmih jong ka jingma",reports:"Ki report",architecture:"Ka jingtei"}, eyebrow:{overview:"Dashboard jong u nongtrei ka koit ka khiah",intake:"Ka jingbishar nongpang",sensors:"Ka jingïaid bad ka jingkit",occupation:"Ka jingma ha ka kam",screening:"Ka jingbishar AI",reports:"Ki record ba la buh",architecture:"Ka jingtei system"}, progress:"Ka jingïaid shaphrang",step:"Step",of:"na",complete:"la dep",current:"mynta",done:"la dep",settings:"Ki settings",worker:"Nongtrei ka koit ka khiah",mode:"Mode: Offline",language:"Ktien",logout:"Log out",buttons:{start:"Sdang",stop:"Pynsangeh",exit:"Exit",reset:"Reset readings",submitPatient:"Buhrieh jingtip nongpang",submitOccupation:"Buhrieh jingtip kamai",save:"Buh bad download PDF",clear:"Pynkhuid",viewAll:"Peit lut →"},intake:{context:"Ka jingtip klinikal",required:"Ki jingtip ba donkam",id:"Patient ID",name:"Ka kyrteng",age:"Rta",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"Ka jingpang khoh",painDuration:"Por ka jingpang (ki sngi)",mobility:"Ka jingeh jingïaid",selectPain:"Jied ka jingïa pang",selectMobility:"Jied ka jingeh jingïaid"},sensors:{placement:"Ka jaka sensor",setup:"2 IMU + 2 FSR",telemetry:"Live telemetry",movement:"Ïaid bad jingkit",note:"Pynïasoh ïa ka physical ESP32/BLE hardware ban shim ïa ki sensor readings ba shisha."},occupation:{activity:"Ka kam",assessment:"Ka jingbishar kamai",type:"Jait kam",standing:"Ki kynta ba ieng man ka sngi",lifting:"Ka jingïakhun jingkit",repetitive:"Ki jingïaid ba manla",impact:"Ka jingktah na ka kam"},risk:{result:"Ka jingmih screening",summary:"La pynïasoh lang ïa ki symptom, BMI, jingïaid, jingïapher ka jingkit bad ka kam."},reports:{saved:"Ki report ba la buh",records:"Ki record nongpang",preview:"Ka jingpeit report",current:"Screening mynta",date:"Tarik bad por",patient:"Nongpang",riskScore:"Risk score",status:"Status",occupation:"Kamai"},overview:{history:"Ka histori",recent:"Screening ba dang shen",start:"Sdang screening thymmai",workflow:"Ki step screening",workflowHint:"Bud ïa ki module ha ka rukom"},architecture:{design:"Ka jingtei system"}},
-  lus: { nav:{overview:"Thilthlawn",intake:"Mihing Thil",sensors:"Sensors",occupation:"Hna",risk:"Risk Result",reports:"Report",architecture:"System siam"}, module:{overview:"Thilthlawn",intake:"Mihing Thil",sensors:"Sensors",occupation:"Hna",screening:"Risk Result",reports:"Report",architecture:"System siam"}, eyebrow:{overview:"Health worker dashboard",intake:"Mihing check",sensors:"Hranghnawm leh load",occupation:"Hna risk",screening:"AI analysis",reports:"Report dah",architecture:"System siam"}, progress:"Screening kalna",step:"Step",of:"a",complete:"zo",current:"tun",done:"zo",settings:"Settings",worker:"Health worker",mode:"Mode: Offline",language:"Ṭawng",logout:"Logout",buttons:{start:"Tan",stop:"Tawp",exit:"Chhuak",reset:"Reset readings",submitPatient:"Patient info submit",submitOccupation:"Hna info submit",save:"Save leh PDF download",clear:"Paih",viewAll:"En vek →"},intake:{context:"Clinical info",required:"Info mamawh",id:"Patient ID",name:"Patient hming",age:"Kum",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"Knee nat",painDuration:"Nat hun (ni)",mobility:"Kal theihna harsat",selectPain:"Pain level thlang",selectMobility:"Mobility harsat thlang"},sensors:{placement:"Sensor dahna",setup:"2 IMU + 2 FSR",telemetry:"Live telemetry",movement:"Kalna leh load",note:"Pynïasoh ïa ka physical ESP32/BLE hardware ban shim ïa ki sensor readings ba shisha."},occupation:{activity:"Hna",assessment:"Hna check",type:"Hna type",standing:"Ni khatah ding hun",lifting:"Boh thlak tlan",repetitive:"Thil tih nawn",impact:"Hna nghawng"},risk:{result:"Screening result",summary:"Symptom, BMI, kalna, kutke load leh hna kan en tlang."},reports:{saved:"Report dah",records:"Patient record",preview:"Report enna",current:"Screening tunah",date:"Tarik leh hun",patient:"Patient",riskScore:"Risk score",status:"Status",occupation:"Hna"},overview:{history:"History",recent:"Screening thar",start:"Screening thar tan",workflow:"Screening step",workflowHint:"Module te chu order in kal rawh"},architecture:{design:"System siam"}},
-  grt: { nav:{overview:"Nokrek",intake:"Rikgital",sensors:"Sensor",occupation:"Kam",risk:"Risk Result",reports:"Report",architecture:"System design"}, module:{overview:"Nokrek",intake:"Rikgital",sensors:"Sensor",occupation:"Kam",screening:"Risk Result",reports:"Report",architecture:"System design"}, eyebrow:{overview:"Health worker dashboard",intake:"Patient assessment",sensors:"Movement aro loading",occupation:"Kam aro risk",screening:"AI analysis",reports:"Saved screening record",architecture:"System design"}, progress:"Screening progress",step:"Step",of:"ni",complete:"finish",current:"daal",done:"finish",settings:"Settings",worker:"Health worker",mode:"Mode: Offline",language:"Kattarang",logout:"Logout",buttons:{start:"Start",stop:"Stop",exit:"Exit",reset:"Reset readings",submitPatient:"Patient info submit",submitOccupation:"Occupation info submit",save:"Save aro PDF download",clear:"Clear",viewAll:"View all →"},intake:{context:"Clinical context",required:"Required information",id:"Patient ID",name:"Patient name",age:"Age",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"Knee pain",painDuration:"Pain duration (days)",mobility:"Mobility limit",selectPain:"Select pain level",selectMobility:"Select mobility issue"},sensors:{placement:"Sensor placement",setup:"2 IMU + 2 FSR setup",telemetry:"Live telemetry",movement:"Movement aro loading",note:"Connect the physical ESP32/BLE hardware to capture real sensor readings."},occupation:{activity:"Work activity",assessment:"Occupation assessment",type:"Occupation type",standing:"Daily standing hours",lifting:"Lifting frequency",repetitive:"Repetitive movements",impact:"Occupational impact"},risk:{result:"Screening result",summary:"Symptoms, BMI, gait asymmetry, foot loading aro occupation are combined."},reports:{saved:"Saved reports",records:"Patient records",preview:"Report preview",current:"Current screening",date:"Date & Time",patient:"Patient",riskScore:"Risk score",status:"Status",occupation:"Occupation"},overview:{history:"History",recent:"Recent screening",start:"Start new screening",workflow:"Screening workflow",workflowHint:"Move through modules in order"},architecture:{design:"System design"}},
-  kok: { nav:{overview:"Bwtai",intake:"Bwtai rong",sensors:"Sensor",occupation:"Khulum",risk:"Risk Result",reports:"Report",architecture:"System design"}, module:{overview:"Bwtai",intake:"Bwtai rong",sensors:"Sensor",occupation:"Khulum",screening:"Risk Result",reports:"Report",architecture:"System design"}, eyebrow:{overview:"Healthcare worker dashboard",intake:"Patient assessment",sensors:"Movement aro loading",occupation:"Risk context",screening:"AI analysis",reports:"Saved screening records",architecture:"System design"}, progress:"Screening progress",step:"Step",of:"ni",complete:"complete",current:"current",done:"done",settings:"Settings",worker:"Healthcare worker",mode:"Mode: Offline-first",language:"Kothok",logout:"Logout",buttons:{start:"Start",stop:"Stop",exit:"Exit",reset:"Reset readings",submitPatient:"Submit patient information",submitOccupation:"Submit occupation information",save:"Save aro PDF download",clear:"Clear",viewAll:"View all →"},intake:{context:"Clinical context",required:"Required inputs",id:"Patient ID",name:"Patient Name",age:"Age",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"Knee pain",painDuration:"Pain duration (days)",mobility:"Mobility limit",selectPain:"Select pain level",selectMobility:"Select mobility issue"},sensors:{placement:"Sensor placement",setup:"2 IMU + 2 FSR setup",telemetry:"Live telemetry",movement:"Movement and loading",note:"Connect the physical ESP32/BLE hardware to capture real sensor readings."},occupation:{activity:"Work activity",assessment:"Occupation assessment",type:"Occupation type",standing:"Daily standing hours",lifting:"Lifting frequency",repetitive:"Repetitive movements",impact:"Occupational impact"},risk:{result:"Screening result",summary:"Symptoms, BMI, gait asymmetry, foot loading imbalance and occupation combined."},reports:{saved:"Saved reports",records:"Patient records",preview:"Report preview",current:"Current screening",date:"Date & Time",patient:"Patient",riskScore:"Risk score",status:"Status",occupation:"Occupation"},overview:{history:"History",recent:"Recent Screening",start:"Start new screening",workflow:"Screening workflow",workflowHint:"Move through the modules in order",gait:"3D Gait Analysis",gaitEyebrow:"Live bilateral gait visualization"},architecture:{design:"System design"}}
+  brx: { nav:{overview:"फिननाय",intake:"हाब्रि फोरों",sensors:"सेन्सर",occupation:"थाखाय",risk:"रिस्क रिजाल्ट",reports:"रिपोर्ट"}, module:{overview:"फिननाय",intake:"हाब्रि फोरों",sensors:"सेन्सर",occupation:"थाखाय",screening:"रिस्क रिजाल्ट",reports:"रिपोर्ट"}, eyebrow:{overview:"हेल्थकेयर वर्कार डेशबोर्ड",intake:"हाब्रि मुल्यायन",sensors:"जायगा आरो लोडिं",occupation:"रिस्क संदर्भ",screening:"AI साहाज्य विश्लेषण",reports:"सेभ स्क्रिनिं रेकर्ड"}, progress:"स्क्रिनिं प्रोग्रेस",step:"स्टेप",of:"नि",complete:"फुरा",current:"दानो",done:"फुरा",settings:"सेटिंग",worker:"हेल्थकेयर वर्कार",mode:"मोड: अफलाइन-फोरों",language:"राव",logout:"लॉगआउट",buttons:{start:"जागाय",stop:"बन्द",exit:"बाहेर",reset:"रीडिंग रिसेट",submitPatient:"हाब्रि फोरों दाथाय",submitOccupation:"थाखाय दाथाय",save:"सेभ आरो PDF डाउनलोड",clear:"खालाम",viewAll:"गासै नाय →"},intake:{context:"क्लिनिकल फोरों",required:"जरुरी फोरों",id:"हाब्रि ID",name:"हाब्रि मुं",age:"बयस",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"जानु दुखु",painDuration:"दुखु सम (दिन)",mobility:"नावजाबाय सीमाय",selectPain:"दुखु लेभेल सायख",selectMobility:"नावजाबाय समस्या सायख"},sensors:{placement:"सेन्सर जायगा",setup:"2 IMU + 2 FSR सेटअप",telemetry:"लाइभ टेलिमेट्री",movement:"नावजाबाय आरो लोडिं",note:"फिजिकल ESP32/BLE हार्डवेर जाबाय रियल सेन्सर रिडिंग लाबो।"},occupation:{activity:"खामानि",assessment:"थाखाय मुल्यायन",type:"थाखाय रोखोम",standing:"दिनै थांनाय घण्टा",lifting:"बोझा लाबनाय सघनता",repetitive:"दोहोरायनाय नावजाबाय",impact:"थाखाय असर"},risk:{result:"स्क्रिनिं रिजाल्ट",summary:"लक्षण, BMI, गैत असमाय, फराय लोडिं आरो थाखाय एकलोगे विश्लेषण।"},reports:{saved:"सेभ रिपोर्ट",records:"हाब्रि रेकर्ड",preview:"रिपोर्ट नाय",current:"दानो स्क्रिनिं",date:"दिन आरो सम",patient:"हाब्रि",riskScore:"रिस्क स्कोर",status:"अवस्था",occupation:"थाखाय"},overview:{history:"जिरायती",recent:"दानो स्क्रिनिं",start:"नोगोर स्क्रिनिं जागाय",workflow:"स्क्रिनिं स्टेप",workflowHint:"स्टेप फोरों गोनांनाय"}},
+  mni: { nav:{overview:"ꯃꯈꯥ ꯑꯣꯏꯕ",intake:"ꯂꯩꯄꯥꯛ ꯂꯣꯏꯁꯤꯟ",sensors:"ꯁꯦꯟꯁꯔ",occupation:"ꯊꯧꯔꯥꯡ",risk:"ꯔꯤꯁ꯭ꯀ ꯔꯤꯖꯜꯇ",reports:"ꯔꯤꯄꯣꯔꯠ"}, module:{overview:"ꯃꯈꯥ ꯑꯣꯏꯕ",intake:"ꯂꯩꯄꯥꯛ ꯂꯣꯏꯁꯤꯟ",sensors:"ꯁꯦꯟꯁꯔ",occupation:"ꯊꯧꯔꯥꯡ",screening:"ꯔꯤꯁ꯭ꯀ ꯔꯤꯖꯜꯇ",reports:"ꯔꯤꯄꯣꯔꯠ"}, eyebrow:{overview:"ꯍꯦꯜꯊꯀꯦꯔ ꯋꯥꯔꯀꯔ ꯗꯦꯁꯕꯣꯔꯗ",intake:"ꯂꯩꯄꯥꯛ ꯃꯇꯦꯡ",sensors:"ꯃꯥꯔꯣꯜ ꯑꯃꯁꯨꯡ ꯂꯣꯗꯤꯡ",occupation:"ꯔꯤꯁ꯭ꯀ ꯄꯥꯡꯊꯣꯛ",screening:"AI-ꯆꯥꯡꯁꯤꯟꯕ ꯑꯦꯅꯥꯂꯥꯏꯁꯤꯁ",reports:"ꯁꯦꯚ ꯆꯦꯛꯀꯤꯡ ꯔꯦꯀꯣꯔꯗ"}, progress:"ꯆꯦꯛꯀꯤꯡ ꯄ꯭ꯔꯣꯒ꯭ꯔꯦꯁ",step:"ꯁ꯭ꯇꯦꯞ",of:"ꯒꯤ",complete:"ꯂꯣꯏꯁꯤꯜꯂꯕ",current:"ꯍꯧꯖꯤꯛ",done:"ꯂꯣꯏꯁꯤꯜꯂꯕ",settings:"ꯁꯦꯇꯤꯡ",worker:"ꯍꯦꯜꯊꯀꯦꯔ ꯋꯥꯔꯀꯔ",mode:"ꯃꯣꯗ: ꯑꯣꯐꯂꯥꯏꯟ",language:"ꯂꯣꯟ",logout:"ꯂꯣꯒꯑꯥꯎꯠ",buttons:{start:"ꯍꯧꯖꯤꯟꯕ",stop:"ꯂꯣꯏꯁꯤꯟꯕ",exit:"ꯅꯣꯡꯃꯥ",reset:"ꯔꯤꯗꯤꯡ ꯔꯤꯁꯦꯠ",submitPatient:"ꯂꯩꯄꯥꯛ ꯐꯣꯔꯣꯝ ꯄꯤꯕ",submitOccupation:"ꯊꯧꯔꯥꯡ ꯐꯣꯔꯣꯝ ꯄꯤꯕ",save:"ꯁꯦꯚ ꯑꯃꯁꯨꯡ PDF ꯗꯥꯎꯅꯂꯣꯗ",clear:"ꯂꯣꯏꯁꯤꯟꯕ",viewAll:"ꯄꯨꯝꯕ ꯎꯅꯕ →"}, intake:{context:"ꯀ꯭ꯂꯤꯅꯤꯀꯦꯜ ꯐꯣꯔꯣꯝ",required:"ꯃꯇꯨꯡ ꯄꯥꯡꯊꯣꯛꯄ ꯐꯣꯔꯣꯝ",id:"ꯂꯩꯄꯥꯛ ID",name:"ꯂꯩꯄꯥꯛ ꯃꯤꯡ",age:"ꯊꯧ",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"ꯅꯨꯡꯁꯤ ꯂꯣꯟ",painDuration:"ꯅꯨꯡꯁꯤ ꯃꯇꯥꯡ (ꯅꯨꯃꯤꯠ)",mobility:"ꯃꯥꯔꯣꯜ ꯂꯣꯏꯁꯤꯟꯕ",selectPain:"ꯅꯨꯡꯁꯤ ꯂꯦꯚꯦꯜ ꯁꯥꯏꯈ",selectMobility:"ꯃꯥꯔꯣꯜ ꯁꯥꯏꯈ"}, sensors:{placement:"ꯁꯦꯟꯁꯔ ꯑꯃꯁꯨꯡ ꯊꯝꯄ",setup:"2 IMU + 2 FSR ꯁꯦꯠꯑꯞ",telemetry:"ꯂꯥꯏꯚ ꯇꯦꯂꯤꯃꯦꯇ꯭ꯔꯤ",movement:"ꯃꯥꯔꯣꯜ ꯑꯃꯁꯨꯡ ꯂꯣꯗꯤꯡ",note:"ꯐꯤꯖꯤꯀꯦꯜ ESP32/BLE ꯍꯥꯔꯗꯋꯦꯔ ꯁꯝꯖꯤꯟꯅꯥ ꯔꯤꯌꯦꯜ ꯁꯦꯟꯁꯔ ꯔꯤꯗꯤꯡ ꯂꯧꯕꯤꯌꯨ।"}, occupation:{activity:"ꯊꯧꯔꯥꯡ",assessment:"ꯊꯧꯔꯥꯡ ꯃꯇꯦꯡ",type:"ꯊꯧꯔꯥꯡ ꯃꯈꯥ",standing:"ꯅꯨꯃꯤꯠ ꯁꯤꯡꯖꯤꯟꯕ ꯄꯨꯡ",lifting:"ꯂꯥꯡꯕ ꯁꯥꯏꯅꯕ",repetitive:"ꯑꯃꯁꯨꯡ ꯑꯃꯁꯨꯡ ꯍꯥꯡꯕ",impact:"ꯊꯧꯔꯥꯡ ꯑꯁꯤ"}, risk:{result:"ꯆꯦꯛꯀꯤꯡ ꯔꯤꯖꯜꯇ",summary:"ꯁꯤꯝꯇꯣꯝ, BMI, ꯆꯥꯡꯁꯤꯟ ꯑꯁꯝꯕ, ꯐꯨꯠ ꯂꯣꯗꯤꯡ ꯑꯃꯁꯨꯡ ꯊꯧꯔꯥꯡ ꯄꯨꯝꯅꯃꯛ ꯑꯦꯅꯥꯂꯥꯏꯁꯤꯁ ꯇꯧꯏ"}, reports:{saved:"ꯁꯦꯚ ꯔꯤꯄꯣꯔꯠ",records:"ꯂꯩꯄꯥꯛ ꯔꯦꯀꯣꯔꯗ",preview:"ꯔꯤꯄꯣꯔꯠ ꯎꯠꯄ",current:"ꯍꯧꯖꯤꯛ ꯆꯦꯛꯀꯤꯡ",date:"ꯇꯥꯔꯤꯈ ꯑꯃꯁꯨꯡ ꯃꯇꯝ",patient:"ꯂꯩꯄꯥꯛ",riskScore:"ꯔꯤꯁ꯭ꯀ ꯁ꯭ꯀꯣꯔ",status:"ꯁ꯭ꯇꯦꯇꯁ",occupation:"ꯊꯧꯔꯥꯡ"}, overview:{history:"ꯍꯤꯁꯇꯔꯤ",recent:"ꯅꯨꯡꯉꯥꯏ ꯆꯦꯛꯀꯤꯡ",start:"ꯑꯅꯧꯕ ꯆꯦꯛꯀꯤꯡ ꯍꯧꯖꯤꯟꯕ",workflow:"ꯆꯦꯛꯀꯤꯡ ꯁ꯭ꯇꯦꯞ",workflowHint:"ꯁ꯭ꯇꯦꯞ ꯄꯨꯝꯅꯃꯛ ꯑꯅꯨꯕꯥ ꯆꯠꯂꯨ"}},
+  kha: { nav:{overview:"Kyndon",intake:"Ka jingtip u nongpang",sensors:"Ki sensor",occupation:"Kamai",risk:"Ka jingmih jong ka jingma",reports:"Ki report"}, module:{overview:"Kyndon",intake:"Ka jingtip u nongpang",sensors:"Ki sensor",occupation:"Kamai",screening:"Ka jingmih jong ka jingma",reports:"Ki report"}, eyebrow:{overview:"Dashboard jong u nongtrei ka koit ka khiah",intake:"Ka jingbishar nongpang",sensors:"Ka jingïaid bad ka jingkit",occupation:"Ka jingma ha ka kam",screening:"Ka jingbishar AI",reports:"Ki record ba la buh"}, progress:"Ka jingïaid shaphrang",step:"Step",of:"na",complete:"la dep",current:"mynta",done:"la dep",settings:"Ki settings",worker:"Nongtrei ka koit ka khiah",mode:"Mode: Offline",language:"Ktien",logout:"Log out",buttons:{start:"Sdang",stop:"Pynsangeh",exit:"Exit",reset:"Reset readings",submitPatient:"Buhrieh jingtip nongpang",submitOccupation:"Buhrieh jingtip kamai",save:"Buh bad download PDF",clear:"Pynkhuid",viewAll:"Peit lut →"},intake:{context:"Ka jingtip klinikal",required:"Ki jingtip ba donkam",id:"Patient ID",name:"Ka kyrteng",age:"Rta",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"Ka jingpang khoh",painDuration:"Por ka jingpang (ki sngi)",mobility:"Ka jingeh jingïaid",selectPain:"Jied ka jingïa pang",selectMobility:"Jied ka jingeh jingïaid"},sensors:{placement:"Ka jaka sensor",setup:"2 IMU + 2 FSR",telemetry:"Live telemetry",movement:"Ïaid bad jingkit",note:"Pynïasoh ïa ka physical ESP32/BLE hardware ban shim ïa ki sensor readings ba shisha."},occupation:{activity:"Ka kam",assessment:"Ka jingbishar kamai",type:"Jait kam",standing:"Ki kynta ba ieng man ka sngi",lifting:"Ka jingïakhun jingkit",repetitive:"Ki jingïaid ba manla",impact:"Ka jingktah na ka kam"},risk:{result:"Ka jingmih screening",summary:"La pynïasoh lang ïa ki symptom, BMI, jingïaid, jingïapher ka jingkit bad ka kam."},reports:{saved:"Ki report ba la buh",records:"Ki record nongpang",preview:"Ka jingpeit report",current:"Screening mynta",date:"Tarik bad por",patient:"Nongpang",riskScore:"Risk score",status:"Status",occupation:"Kamai"},overview:{history:"Ka histori",recent:"Screening ba dang shen",start:"Sdang screening thymmai",workflow:"Ki step screening",workflowHint:"Bud ïa ki module ha ka rukom"}},
+  lus: { nav:{overview:"Thilthlawn",intake:"Mihing Thil",sensors:"Sensors",occupation:"Hna",risk:"Risk Result",reports:"Report"}, module:{overview:"Thilthlawn",intake:"Mihing Thil",sensors:"Sensors",occupation:"Hna",screening:"Risk Result",reports:"Report"}, eyebrow:{overview:"Health worker dashboard",intake:"Mihing check",sensors:"Hranghnawm leh load",occupation:"Hna risk",screening:"AI analysis",reports:"Report dah"}, progress:"Screening kalna",step:"Step",of:"a",complete:"zo",current:"tun",done:"zo",settings:"Settings",worker:"Health worker",mode:"Mode: Offline",language:"Ṭawng",logout:"Logout",buttons:{start:"Tan",stop:"Tawp",exit:"Chhuak",reset:"Reset readings",submitPatient:"Patient info submit",submitOccupation:"Hna info submit",save:"Save leh PDF download",clear:"Paih",viewAll:"En vek →"},intake:{context:"Clinical info",required:"Info mamawh",id:"Patient ID",name:"Patient hming",age:"Kum",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"Knee nat",painDuration:"Nat hun (ni)",mobility:"Kal theihna harsat",selectPain:"Pain level thlang",selectMobility:"Mobility harsat thlang"},sensors:{placement:"Sensor dahna",setup:"2 IMU + 2 FSR",telemetry:"Live telemetry",movement:"Kalna leh load",note:"Pynïasoh ïa ka physical ESP32/BLE hardware ban shim ïa ki sensor readings ba shisha."},occupation:{activity:"Hna",assessment:"Hna check",type:"Hna type",standing:"Ni khatah ding hun",lifting:"Boh thlak tlan",repetitive:"Thil tih nawn",impact:"Hna nghawng"},risk:{result:"Screening result",summary:"Symptom, BMI, kalna, kutke load leh hna kan en tlang."},reports:{saved:"Report dah",records:"Patient record",preview:"Report enna",current:"Screening tunah",date:"Tarik leh hun",patient:"Patient",riskScore:"Risk score",status:"Status",occupation:"Hna"},overview:{history:"History",recent:"Screening thar",start:"Screening thar tan",workflow:"Screening step",workflowHint:"Module te chu order in kal rawh"}},
+  grt: { nav:{overview:"Nokrek",intake:"Rikgital",sensors:"Sensor",occupation:"Kam",risk:"Risk Result",reports:"Report"}, module:{overview:"Nokrek",intake:"Rikgital",sensors:"Sensor",occupation:"Kam",screening:"Risk Result",reports:"Report"}, eyebrow:{overview:"Health worker dashboard",intake:"Patient assessment",sensors:"Movement aro loading",occupation:"Kam aro risk",screening:"AI analysis",reports:"Saved screening record"}, progress:"Screening progress",step:"Step",of:"ni",complete:"finish",current:"daal",done:"finish",settings:"Settings",worker:"Health worker",mode:"Mode: Offline",language:"Kattarang",logout:"Logout",buttons:{start:"Start",stop:"Stop",exit:"Exit",reset:"Reset readings",submitPatient:"Patient info submit",submitOccupation:"Occupation info submit",save:"Save aro PDF download",clear:"Clear",viewAll:"View all →"},intake:{context:"Clinical context",required:"Required information",id:"Patient ID",name:"Patient name",age:"Age",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"Knee pain",painDuration:"Pain duration (days)",mobility:"Mobility limit",selectPain:"Select pain level",selectMobility:"Select mobility issue"},sensors:{placement:"Sensor placement",setup:"2 IMU + 2 FSR setup",telemetry:"Live telemetry",movement:"Movement aro loading",note:"Connect the physical ESP32/BLE hardware to capture real sensor readings."},occupation:{activity:"Work activity",assessment:"Occupation assessment",type:"Occupation type",standing:"Daily standing hours",lifting:"Lifting frequency",repetitive:"Repetitive movements",impact:"Occupational impact"},risk:{result:"Screening result",summary:"Symptoms, BMI, gait asymmetry, foot loading aro occupation are combined."},reports:{saved:"Saved reports",records:"Patient records",preview:"Report preview",current:"Current screening",date:"Date & Time",patient:"Patient",riskScore:"Risk score",status:"Status",occupation:"Occupation"},overview:{history:"History",recent:"Recent screening",start:"Start new screening",workflow:"Screening workflow",workflowHint:"Move through modules in order"}},
+  kok: { nav:{overview:"Bwtai",intake:"Bwtai rong",sensors:"Sensor",occupation:"Khulum",risk:"Risk Result",reports:"Report"}, module:{overview:"Bwtai",intake:"Bwtai rong",sensors:"Sensor",occupation:"Khulum",screening:"Risk Result",reports:"Report"}, eyebrow:{overview:"Healthcare worker dashboard",intake:"Patient assessment",sensors:"Movement aro loading",occupation:"Risk context",screening:"AI analysis",reports:"Saved screening records"}, progress:"Screening progress",step:"Step",of:"ni",complete:"complete",current:"current",done:"done",settings:"Settings",worker:"Healthcare worker",mode:"Mode: Offline-first",language:"Kothok",logout:"Logout",buttons:{start:"Start",stop:"Stop",exit:"Exit",reset:"Reset readings",submitPatient:"Submit patient information",submitOccupation:"Submit occupation information",save:"Save aro PDF download",clear:"Clear",viewAll:"View all →"},intake:{context:"Clinical context",required:"Required inputs",id:"Patient ID",name:"Patient Name",age:"Age",height:"Height (cm)",weight:"Weight (kg)",bmi:"BMI (calculated)",gender:"Gender",pain:"Knee pain",painDuration:"Pain duration (days)",mobility:"Mobility limit",selectPain:"Select pain level",selectMobility:"Select mobility issue"},sensors:{placement:"Sensor placement",setup:"2 IMU + 2 FSR setup",telemetry:"Live telemetry",movement:"Movement and loading",note:"Connect the physical ESP32/BLE hardware to capture real sensor readings."},occupation:{activity:"Work activity",assessment:"Occupation assessment",type:"Occupation type",standing:"Daily standing hours",lifting:"Lifting frequency",repetitive:"Repetitive movements",impact:"Occupational impact"},risk:{result:"Screening result",summary:"Symptoms, BMI, gait asymmetry, foot loading imbalance and occupation combined."},reports:{saved:"Saved reports",records:"Patient records",preview:"Report preview",current:"Current screening",date:"Date & Time",patient:"Patient",riskScore:"Risk score",status:"Status",occupation:"Occupation"},overview:{history:"History",recent:"Recent Screening",start:"Start new screening",workflow:"Screening workflow",workflowHint:"Move through the modules in order",gait:"Interactive Leg Analysis",gaitEyebrow:"Cursor-based leg movement visualization"}}
 };
 
 let currentLanguage = localStorage.getItem(LANGUAGE_KEY) || "en";
+if (!Object.prototype.hasOwnProperty.call(translations, currentLanguage)) currentLanguage = "en";
 function t(path) {
   const parts = path.split(".");
   let value = translations[currentLanguage] || translations.en;
@@ -601,13 +614,7 @@ function renderWorkflowProgress(activeRoute) {
       container.innerHTML = "";
       return;
     }
-    const completion = {
-      intake: !!state.intakeSubmitted,
-      sensors: !!state.sensorSubmitted,
-      occupation: !!state.occupationSubmitted,
-      screening: !!state.riskCompleted,
-      reports: !!state.reportSaved,
-    };
+    const completion = workflowCompletionState();
     const completedCount = workflowSteps.filter((step) => completion[step.route]).length;
     const progress = Math.round((completedCount / workflowSteps.length) * 100);
     container.innerHTML = `<div class="progress-track-inline" role="list" aria-label="${escapeHtml(t("progress"))}: ${idx + 1} ${escapeHtml(t("of"))} ${workflowSteps.length}">${workflowSteps.map((step, i) => {
@@ -621,7 +628,7 @@ function applyLanguage() {
   document.documentElement.lang = currentLanguage === "mni" ? "mni" : currentLanguage;
   document.body.dataset.lang = currentLanguage;
   const route = currentRoute();
-  const navMap = { overview:"overview", intake:"intake", sensors:"sensors", occupation:"occupation", screening:"risk", reports:"reports", architecture:"architecture" };
+  const navMap = { overview:"overview", intake:"intake", sensors:"sensors", occupation:"occupation", screening:"risk", reports:"reports" };
   Object.entries(navMap).forEach(([routeKey, key]) => setElementText(`[data-route="${routeKey}"] span`, t(`nav.${key}`)));
   document.querySelectorAll("[data-module-header]").forEach((header) => {
     const r = header.dataset.moduleHeader;
@@ -639,15 +646,15 @@ function applyLanguage() {
   setElementText("#settingsLogout", t("logout"));
   // Core module labels and actions.
   setElementText("#page-intake .panel-heading h2", t("intake.context")); setElementText("#page-intake .panel-heading .chip", t("intake.required"));
-  translateLabel("#page-intake label:nth-of-type(1)", t("intake.id")); translateLabel("#page-intake label:nth-of-type(2)", t("intake.name")); translateLabel("#page-intake label:nth-of-type(3)", t("intake.age")); translateLabel("#page-intake label:nth-of-type(4)", t("intake.height")); translateLabel("#page-intake label:nth-of-type(5)", t("intake.weight")); translateLabel("#page-intake label:nth-of-type(6)", t("intake.bmi")); translateLabel("#page-intake label:nth-of-type(7)", t("intake.gender")); translateLabel("#page-intake label:nth-of-type(8)", t("intake.pain")); translateLabel("#page-intake label:nth-of-type(9)", t("intake.painDuration")); translateLabel("#page-intake label:nth-of-type(10)", t("intake.mobility"));
+  translateLabel('#page-intake label[for="patientId"]', t("intake.id")); translateLabel('#page-intake label[for="patientName"]', t("intake.name")); translateLabel('#page-intake label[for="age"]', t("intake.age")); translateLabel('#page-intake label[for="gender"]', t("intake.gender")); translateLabel('#page-intake label[for="height"]', t("intake.height")); translateLabel('#page-intake label[for="weight"]', t("intake.weight"));
   setElementText("#intakeForm .primary-button", t("buttons.submitPatient"));
-  setElementText("#page-sensors .body-map-panel .panel-heading .eyebrow", t("sensors.placement")); setElementText("#page-sensors .body-map-panel h2", t("sensors.setup")); setElementText("#page-sensors .telemetry-panel .panel-heading .eyebrow", t("sensors.telemetry")); setElementText("#page-sensors .telemetry-panel h2", t("sensors.movement")); setElementText("#page-sensors .panel-note", t("sensors.note")); setElementText("#startStream", t("buttons.start")); setElementText("#stopStream", t("buttons.stop")); setElementText("#exitStream", t("buttons.exit")); setElementText("#resetSensors", t("buttons.reset"));
+  setElementText("#page-sensors .body-map-panel .panel-heading .eyebrow", t("sensors.placement")); setElementText("#page-sensors .body-map-panel h2", t("sensors.setup")); setElementText("#page-sensors .telemetry-panel .panel-heading .eyebrow", t("sensors.telemetry")); setElementText("#page-sensors .telemetry-panel h2", t("sensors.movement")); setElementText("#page-sensors .panel-note", t("sensors.note")); setElementText("#startStream", "Connect"); setElementText("#submitSensorData", "Submit");
   setElementText("#page-occupation .occupation-panel .panel-heading .eyebrow", t("occupation.activity")); setElementText("#page-occupation .occupation-panel h2", t("occupation.assessment")); setElementText("#page-occupation .occupation-risk-panel h2", t("occupation.impact"));
   translateLabel("#occupationForm label:nth-of-type(1)", t("occupation.type")); translateLabel("#occupationForm label:nth-of-type(2)", t("occupation.standing")); translateLabel("#occupationForm label:nth-of-type(3)", t("occupation.lifting")); translateLabel("#occupationForm label:nth-of-type(4)", t("occupation.repetitive")); setElementText("#occupationForm .primary-button", t("buttons.submitOccupation"));
   setElementText("#page-screening .risk-copy h2", t("risk.result")); setElementText("#riskSummary", t("risk.summary")); setElementText("#saveReportInline", t("buttons.save"));
   setElementText("#page-reports .reports-panel h2", t("reports.saved")); setElementText("#clearReports", t("buttons.clear")); setElementText("#page-reports .local-db-heading h3", t("reports.records")); setElementText("#page-reports .report-actions-panel .eyebrow", t("reports.current")); setElementText("#page-reports .report-actions-panel h2", t("reports.preview"));
   const previewLabels = document.querySelectorAll("#page-reports .preview-list > div > span"); if (previewLabels.length >= 4) { previewLabels[0].textContent=t("reports.patient"); previewLabels[1].textContent=t("reports.riskScore"); previewLabels[2].textContent=t("reports.status"); previewLabels[3].textContent=t("reports.occupation"); }
-  setElementText("#page-overview .overview-start span", t("overview.start")); setElementText("#page-overview .gait-3d-widget .widget-heading .eyebrow", t("overview.gaitEyebrow")); setElementText("#page-overview .gait-3d-widget h3", t("overview.gait")); setElementText("#page-overview .workflow-heading .eyebrow", t("overview.workflow")); setElementText("#page-overview .workflow-heading strong", t("overview.workflowHint")); setElementText("#page-overview .recent-widget .widget-heading .eyebrow", t("overview.history")); setElementText("#page-overview .recent-widget h3", t("overview.recent")); setElementText("#page-overview .recent-widget .widget-link", t("buttons.viewAll"));
+  setElementText("#page-overview .overview-start span", t("overview.start")); setElementText("#page-overview .workflow-heading .eyebrow", t("overview.workflow")); setElementText("#page-overview .workflow-heading strong", t("overview.workflowHint")); setElementText("#page-overview .recent-widget .widget-heading .eyebrow", t("overview.history")); setElementText("#page-overview .recent-widget h3", t("overview.recent")); setElementText("#page-overview .recent-widget .widget-link", t("buttons.viewAll"));
   renderWorkflowProgress(route);
 }
 function initLanguageSupport() {
@@ -663,7 +670,24 @@ function currentRoute() {
   return routes[route] ? route : "overview";
 }
 
-function showRoute(route) {
+function workflowCompletionState() {
+  return {
+    intake: !!state.intakeSubmitted,
+    sensors: !!state.sensorSubmitted,
+    occupation: !!state.occupationSubmitted,
+    screening: !!state.riskCompleted,
+    reports: !!state.reportSaved,
+  };
+}
+
+function firstIncompleteWorkflowRoute() {
+  const completion = workflowCompletionState();
+  return workflowSteps.find((step) => !completion[step.route])?.route || "reports";
+}
+
+async function showRoute(route, options = {}) {
+  // Navigation is intentionally open: every module can be visited/read.
+  // Only workflow actions/data submission are gated sequentially.
   const activeRoute = routes[route] ? route : "overview";
   els.pages.forEach((page) => {
     page.hidden = page.dataset.page !== activeRoute;
@@ -673,9 +697,14 @@ function showRoute(route) {
   });
   document.body.dataset.activeRoute = activeRoute;
   renderWorkflowProgress(activeRoute);
-  if (activeRoute === "screening") fetchMlPrediction();
-  if (activeRoute === "reports") renderReports();
-  if (activeRoute === "overview") renderOverview();
+
+  // Wait for the local database query before the route is considered rendered.
+  // This prevents Overview from briefly showing an empty history on first load.
+  if (options.refreshData !== false) {
+    if (activeRoute === "reports") await renderReports();
+    if (activeRoute === "overview") await renderOverview();
+  }
+
   if (window.location.hash !== `#/${activeRoute}`) {
     window.history.replaceState(null, "", `#/${activeRoute}`);
   }
@@ -694,6 +723,33 @@ const BLE_CONFIG = Object.freeze({
 
 function pushSensorSample(sample) {
   const toFinite = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
+  const requiredFields = [
+    "leftImuX", "leftImuY", "leftImuZ", "leftGyroX", "leftGyroY", "leftGyroZ",
+    "rightImuX", "rightImuY", "rightImuZ", "rightGyroX", "rightGyroY", "rightGyroZ",
+    "leftFsr", "rightFsr",
+  ];
+  const missingFields = requiredFields.filter((key) => !Number.isFinite(Number(sample[key])));
+  const failedMpu = [
+    sample.leftMpuOk === false ? "leftMpu" : null,
+    sample.rightMpuOk === false ? "rightMpu" : null,
+  ].filter(Boolean);
+
+  // A packet is valid when its numeric channels are present. MPU health flags
+  // are reported separately and must not discard an otherwise valid packet.
+  // This prevents the Submit button from remaining disabled because of a
+  // temporary MPU health flag.
+  const imuFieldsValid = requiredFields.slice(0, 12).every((key) => Number.isFinite(Number(sample[key])));
+  const pressureFieldsValid = Number.isFinite(Number(sample.leftFsr)) && Number.isFinite(Number(sample.rightFsr));
+  state.imuConnected = imuFieldsValid && !failedMpu.length;
+  state.pressureConnected = pressureFieldsValid;
+  state.hardwareConnected = true;
+  state.streaming = true;
+
+  state.sensorQuality.lastMissingFields = [...missingFields, ...failedMpu];
+  state.sensorQuality.lastPacketAt = Date.now();
+  if (missingFields.length) state.sensorQuality.invalidSamples += 1;
+  else state.sensorQuality.validSamples += 1;
+
   const leftX = toFinite(sample.leftImuX ?? sample.leftAx ?? sample.lx);
   const leftY = toFinite(sample.leftImuY ?? sample.leftAy ?? sample.ly);
   const leftZ = toFinite(sample.leftImuZ ?? sample.leftAz ?? sample.lz);
@@ -710,6 +766,17 @@ function pushSensorSample(sample) {
   const rightMagnitude = toFinite(sample.rightImu ?? Math.sqrt(rightX ** 2 + rightY ** 2 + rightZ ** 2));
   const leftFsr = toFinite(sample.leftFsr ?? sample.leftPressure ?? sample.fsrLeft ?? sample.leftFsrRaw);
   const rightFsr = toFinite(sample.rightFsr ?? sample.rightPressure ?? sample.fsrRight ?? sample.rightFsrRaw);
+
+  const leftVoltage = toFinite(
+    sample.leftFsrVoltage ?? sample.leftVoltage,
+    (leftFsr * 3.3) / 4095
+  );
+  const rightVoltage = toFinite(
+    sample.rightFsrVoltage ?? sample.rightVoltage,
+    (rightFsr * 3.3) / 4095
+  );
+
+  const sampleTimestamp = Date.now();
   state.latest = {
     leftImu: leftMagnitude,
     rightImu: rightMagnitude,
@@ -718,12 +785,33 @@ function pushSensorSample(sample) {
     leftImuX: leftX, leftImuY: leftY, leftImuZ: leftZ,
     rightImuX: rightX, rightImuY: rightY, rightImuZ: rightZ,
     leftGyroX: leftGx, leftGyroY: leftGy, leftGyroZ: leftGz,
-    rightGyroX: rightGx, rightGy: rightGy, rightGyroZ: rightGz,
-    leftFsrVoltage: toFinite(sample.leftFsrVoltage ?? sample.leftVoltage),
-    rightFsrVoltage: toFinite(sample.rightFsrVoltage ?? sample.rightVoltage),
+    rightGyroX: rightGx, rightGyroY: rightGy, rightGyroZ: rightGz,
+    leftFsrVoltage: leftVoltage,
+    rightFsrVoltage: rightVoltage,
   };
+
+  state.sensorSamples.push({
+    ts: sampleTimestamp,
+    leftImuX: leftX, leftImuY: leftY, leftImuZ: leftZ,
+    rightImuX: rightX, rightImuY: rightY, rightImuZ: rightZ,
+    leftGyroX: leftGx, leftGyroY: leftGy, leftGyroZ: leftGz,
+    rightGyroX: rightGx, rightGyY: rightGy, rightGyroZ: rightGz,
+    leftFsr, rightFsr,
+    leftFsrVoltage: leftVoltage,
+    rightFsrVoltage: rightVoltage,
+  });
+  // Correct the property name if the compact packet path above created it.
+  state.sensorSamples[state.sensorSamples.length - 1].rightGyroY = rightGy;
+  delete state.sensorSamples[state.sensorSamples.length - 1].rightGyY;
+
+  state.sensorSamples = state.sensorSamples.slice(-3000);
+  state.sensorFeatures = extractSensorFeatures();
   state.tick += 1;
-  state.sampleCount += 1;
+  state.sampleCount = state.sensorQuality.validSamples;
+  if (els.submitSensorData) {
+    els.submitSensorData.disabled = !isSensorCaptureReady() || !state.hardwareConnected || !state.capturing;
+  }
+
   state.history.push({
     leftImu: leftMagnitude,
     rightImu: rightMagnitude,
@@ -735,29 +823,125 @@ function pushSensorSample(sample) {
   state.history = state.history.slice(-64);
   updateAll();
 }
+
 function parseHardwarePacket(text) {
+  if (!state.capturing || !state.hardwareConnected) return false;
   const clean = String(text || "").trim();
-  if (!clean) return;
+  if (!clean) return false;
+
+  // ESP32 CSV formats supported:
+  // 14 = 12 IMU axes + 2 FSR
+  // 15 = timestamp + 14 sensor values
+  // 16 = 14 sensor values + 2 MPU health flags
+  // 17 = timestamp + 14 sensor values + 2 MPU health flags
+  const parts = clean.split(",").map((value) => value.trim());
+  const numbers = parts.map(Number);
+  // Current one-leg ESP32 firmware: timestamp + 6 MPU6050 axes + 2 FSR values.
+  if (numbers.length === 9 && numbers.every(Number.isFinite)) {
+    pushSensorSample({
+      leftImuX: numbers[1], leftImuY: numbers[2], leftImuZ: numbers[3],
+      leftGyroX: numbers[4], leftGyroY: numbers[5], leftGyroZ: numbers[6],
+      leftFsr: numbers[7], rightFsr: numbers[8],
+      rightImuX: 0, rightImuY: 0, rightImuZ: 0,
+      rightGyroX: 0, rightGyroY: 0, rightGyroZ: 0,
+    });
+    return true;
+  }
+  if ([14, 15, 16, 17].includes(numbers.length) && numbers.every(Number.isFinite)) {
+    let offset = 0;
+    let hasHealthFlags = false;
+    if (numbers.length === 15 || numbers.length === 17) offset = 1;
+    if (numbers.length === 16 || numbers.length === 17) hasHealthFlags = true;
+
+    const sample = {
+      leftImuX: numbers[offset + 0],
+      leftImuY: numbers[offset + 1],
+      leftImuZ: numbers[offset + 2],
+      leftGyroX: numbers[offset + 3],
+      leftGyroY: numbers[offset + 4],
+      leftGyroZ: numbers[offset + 5],
+      rightImuX: numbers[offset + 6],
+      rightImuY: numbers[offset + 7],
+      rightImuZ: numbers[offset + 8],
+      rightGyroX: numbers[offset + 9],
+      rightGyroY: numbers[offset + 10],
+      rightGyroZ: numbers[offset + 11],
+      leftFsr: numbers[offset + 12],
+      rightFsr: numbers[offset + 13],
+    };
+    if (hasHealthFlags) {
+      sample.leftMpuOk = numbers[offset + 14] === 1;
+      sample.rightMpuOk = numbers[offset + 15] === 1;
+    }
+    pushSensorSample(sample);
+    return true;
+  }
+
+  // Backward-compatible JSON parser. JSON may be received with or without a
+  // newline, so this is attempted for every complete notification candidate.
   try {
     const parsed = JSON.parse(clean);
     if (parsed && typeof parsed === "object") {
-      if (parsed.data && typeof parsed.data === "object") return pushSensorSample(parsed.data);
-      return pushSensorSample(parsed);
+      if (parsed.data && typeof parsed.data === "object") return !!pushSensorSample(parsed.data);
+      pushSensorSample(parsed);
+      return true;
     }
   } catch (_) {
-    const parts = clean.split(/[,;\s]+/).map(Number);
-    if (parts.length >= 4 && parts.slice(0, 4).every(Number.isFinite)) {
-      pushSensorSample({ leftImu: parts[0], rightImu: parts[1], leftFsr: parts[2], rightFsr: parts[3] });
-    }
+    // Incomplete/unknown fragments are handled by the notification buffer.
   }
+  return false;
 }
 
 function handleBleNotification(event) {
   const decoder = handleBleNotification.decoder || (handleBleNotification.decoder = new TextDecoder());
-  state.packetBuffer += decoder.decode(event.target.value, { stream: true });
+  const chunk = decoder.decode(event.target.value, { stream: true });
+  if (!chunk) return;
+  state.packetBuffer += chunk;
+
+  // Process newline-framed packets first.
   const packets = state.packetBuffer.split(/\r?\n/);
   state.packetBuffer = packets.pop() || "";
-  packets.forEach(parseHardwarePacket);
+  packets.forEach((packet) => parseHardwarePacket(packet));
+
+  // Also handle a complete CSV notification when the BLE stack strips the
+  // newline. This covers 14/15/16/17-field packets.
+  const candidate = state.packetBuffer.trim();
+  if (candidate) {
+    const fieldCount = candidate.split(",").length;
+    if ([14, 15, 16, 17].includes(fieldCount)) {
+      const values = candidate.split(",").map((value) => Number(value.trim()));
+      if (values.every(Number.isFinite)) {
+        state.packetBuffer = "";
+        parseHardwarePacket(candidate);
+      }
+    } else if (candidate.startsWith("{") && candidate.endsWith("}")) {
+      state.packetBuffer = "";
+      parseHardwarePacket(candidate);
+    }
+  }
+}
+
+function enforceSensorDataWatchdog() {
+  if (!state.hardwareConnected || !state.capturing) return;
+  const last = state.sensorQuality.lastPacketAt;
+  if (!last || Date.now() - last > 1500) {
+    if (state.imuConnected || state.pressureConnected) {
+      state.imuConnected = false;
+      state.pressureConnected = false;
+      state.latest.leftImu = 0;
+      state.latest.rightImu = 0;
+      state.latest.leftFsr = 0;
+      state.latest.rightFsr = 0;
+      state.latest.leftImuX = state.latest.leftImuY = state.latest.leftImuZ = 0;
+      state.latest.rightImuX = state.latest.rightImuY = state.latest.rightImuZ = 0;
+      state.latest.leftGyroX = state.latest.leftGyroY = state.latest.leftGyroZ = 0;
+      state.latest.rightGyroX = state.latest.rightGyroY = state.latest.rightGyroZ = 0;
+      state.latest.leftFsrVoltage = state.latest.rightFsrVoltage = 0;
+      state.streamState = undefined;
+      if (els.streamState) els.streamState.textContent = "ESP32 connected • waiting for sensor data";
+      updateAll();
+    }
+  }
 }
 
 async function connectHardware() {
@@ -776,31 +960,59 @@ async function connectHardware() {
   state.hardwareDevice = device;
   state.hardwareCharacteristic = characteristic;
   state.hardwareConnected = true;
+  state.packetBuffer = "";
+  handleBleNotification.decoder = new TextDecoder();
+  // BLE/GATT connection is separate from sensor-data health. The first valid
+  // packet establishes the IMU and FSR connected states.
+  state.imuConnected = false;
+  state.pressureConnected = false;
   state.streaming = true;
   state.capturing = true;
   state.sampleCount = 0;
+  state.sensorQuality = { validSamples: 0, invalidSamples: 0, lastMissingFields: [], lastPacketAt: null };
+  state.sensorSamples = [];
+  state.sensorFeatures = null;
+  state.captureStartedAt = Date.now();
+  state.captureEndedAt = null;
   els.streamState.textContent = "Connected • capturing";
   els.streamState.classList.add("green");
   els.connectionLabel.textContent = `${device.name || "ESP32"} connected`;
-  els.startStream.hidden = true;
-  els.stopStream.hidden = false;
-  els.exitStream.hidden = false;
-  setNotification("ESP32 connected. Capturing real MPU6050 and FSR readings.", true);
+  els.startStream.hidden = false;
+  els.startStream.textContent = "Stop";
+  els.startStream.dataset.sensorAction = "stop";
+  els.submitSensorData.hidden = false;
+  els.submitSensorData.disabled = true;
+  setNotification("ESP32 connected. Waiting for real MPU6050 and FSR data.", true);
   updateAll();
+}
+
+function isSensorCaptureReady() {
+  return state.sensorQuality.validSamples >= 10;
+}
+
+function updateSensorSubmitButton() {
+  if (!els.submitSensorData) return;
+  els.submitSensorData.disabled = !state.hardwareConnected || !state.capturing || !isSensorCaptureReady();
 }
 
 function handleHardwareDisconnected() {
   state.hardwareConnected = false;
+  state.imuConnected = false;
+  state.pressureConnected = false;
   state.streaming = false;
   state.capturing = false;
   state.hardwareDevice = null;
   state.hardwareCharacteristic = null;
+  state.packetBuffer = "";
+  handleBleNotification.decoder = new TextDecoder();
   els.streamState.textContent = "Hardware disconnected";
   els.streamState.classList.remove("green");
   els.connectionLabel.textContent = "ESP32 not connected";
   els.startStream.hidden = false;
-  els.stopStream.hidden = true;
-  els.exitStream.hidden = true;
+  els.startStream.textContent = "Connect";
+  els.startStream.dataset.sensorAction = "connect";
+  els.submitSensorData.hidden = false;
+  els.submitSensorData.disabled = true;
   setNotification("ESP32 disconnected. Connect the hardware before collecting another sensor sample.", false);
   updateAll();
 }
@@ -809,6 +1021,13 @@ function resetSensorReadings() {
   state.sampleCount = 0;
   state.tick = 0;
   state.sensorSubmitted = false;
+  state.sensorSamples = [];
+  state.sensorFeatures = null;
+  state.captureStartedAt = null;
+  state.captureEndedAt = null;
+  state.imuConnected = false;
+  state.pressureConnected = false;
+  state.sensorQuality = { validSamples: 0, invalidSamples: 0, lastMissingFields: [], lastPacketAt: null };
   state.history = Array.from({ length: 48 }, () => ({ leftImu: 0, rightImu: 0, leftFsr: 0, rightFsr: 0, leftGyro: 0, rightGyro: 0 }));
   state.latest = {
     leftImu: 0, rightImu: 0, leftFsr: 0, rightFsr: 0,
@@ -835,23 +1054,232 @@ function calculateBmi() {
   return Number.isFinite(rounded) ? rounded : null;
 }
 
+
+function percentile(values, p) {
+  const clean = values.filter(Number.isFinite).sort((a, b) => a - b);
+  if (!clean.length) return 0;
+  const position = (clean.length - 1) * Math.max(0, Math.min(1, p));
+  const lower = Math.floor(position);
+  const upper = Math.ceil(position);
+  if (lower === upper) return clean[lower];
+  return clean[lower] + (clean[upper] - clean[lower]) * (position - lower);
+}
+
+function mean(values) {
+  const clean = values.filter(Number.isFinite);
+  return clean.length ? clean.reduce((sum, value) => sum + value, 0) / clean.length : 0;
+}
+
+function standardDeviation(values) {
+  const clean = values.filter(Number.isFinite);
+  if (clean.length < 2) return 0;
+  const avg = mean(clean);
+  return Math.sqrt(mean(clean.map(value => (value - avg) ** 2)));
+}
+
+function detectPressureEvents(samples, side) {
+  const key = side === "left" ? "leftFsr" : "rightFsr";
+  const values = samples.map(sample => Number(sample[key])).filter(Number.isFinite);
+  if (values.length < 8) return { contacts: [], stances: [], threshold: 0 };
+
+  const p10 = percentile(values, 0.10);
+  const p90 = percentile(values, 0.90);
+  const threshold = p10 + Math.max(50, (p90 - p10) * 0.25);
+  const contacts = [];
+  const stances = [];
+  let inContact = false;
+  let contactStart = null;
+  let lastContact = -Infinity;
+
+  for (let i = 1; i < samples.length; i += 1) {
+    const previous = Number(samples[i - 1][key]);
+    const current = Number(samples[i][key]);
+    const t = Number(samples[i].ts);
+    if (!Number.isFinite(previous) || !Number.isFinite(current) || !Number.isFinite(t)) continue;
+
+    if (!inContact && previous < threshold && current >= threshold && t - lastContact >= 300) {
+      inContact = true;
+      contactStart = t;
+      contacts.push(t);
+      lastContact = t;
+    } else if (inContact && previous >= threshold && current < threshold) {
+      const duration = t - contactStart;
+      if (duration >= 150 && duration <= 3000) {
+        stances.push({ start: contactStart, end: t, duration });
+      }
+      inContact = false;
+      contactStart = null;
+    }
+  }
+
+  return { contacts, stances, threshold };
+}
+
+function extractSensorFeatures() {
+  const samples = Array.isArray(state.sensorSamples) ? state.sensorSamples : [];
+  if (samples.length < 10) {
+    return {
+      status: "Insufficient data",
+      durationSeconds: 0,
+      sampleCount: samples.length,
+      stepCount: 0,
+      cadence: 0,
+      stanceTimeAsymmetry: 0,
+      kneeRomLeft: 0,
+      kneeRomRight: 0,
+      loadDistributionLeft: 0,
+      loadDistributionRight: 0,
+      loadDistributionRatio: "0:0",
+      heelStrikeForceLeft: 0,
+      heelStrikeForceRight: 0,
+      toeOffForceLeft: 0,
+      toeOffForceRight: 0,
+      gaitCycleVariability: 0,
+      leftStanceTime: 0,
+      rightStanceTime: 0,
+      leftContactCount: 0,
+      rightContactCount: 0,
+      note: "Collect more real ESP32 samples to calculate gait features.",
+    };
+  }
+
+  const firstTs = Number(samples[0].ts);
+  const lastTs = Number(samples[samples.length - 1].ts);
+  const durationSeconds = Math.max(0, (lastTs - firstTs) / 1000);
+  const leftEvents = detectPressureEvents(samples, "left");
+  const rightEvents = detectPressureEvents(samples, "right");
+  const totalSteps = leftEvents.contacts.length + rightEvents.contacts.length;
+  const cadence = durationSeconds > 0 ? (totalSteps / durationSeconds) * 60 : 0;
+
+  const leftStance = mean(leftEvents.stances.map(item => item.duration)) / 1000;
+  const rightStance = mean(rightEvents.stances.map(item => item.duration)) / 1000;
+  const stanceMean = mean([leftStance, rightStance].filter(value => value > 0));
+  const stanceTimeAsymmetry = stanceMean
+    ? (Math.abs(leftStance - rightStance) / stanceMean) * 100
+    : 0;
+
+  const leftPressure = samples.map(sample => Number(sample.leftFsr)).filter(Number.isFinite);
+  const rightPressure = samples.map(sample => Number(sample.rightFsr)).filter(Number.isFinite);
+  const leftLoad = mean(leftPressure);
+  const rightLoad = mean(rightPressure);
+  const loadTotal = leftLoad + rightLoad;
+  const loadDistributionLeft = loadTotal ? (leftLoad / loadTotal) * 100 : 0;
+  const loadDistributionRight = loadTotal ? (rightLoad / loadTotal) * 100 : 0;
+
+  const forceProxy = (events, key, position) => {
+    const values = [];
+    events.stances.forEach(stance => {
+      const start = stance.start;
+      const end = stance.end;
+      const span = end - start;
+      const from = position === "heel" ? start : start + span * 0.70;
+      const to = position === "heel" ? start + span * 0.30 : end;
+      values.push(...samples
+        .filter(sample => sample.ts >= from && sample.ts <= to)
+        .map(sample => Number(sample[key]))
+        .filter(Number.isFinite));
+    });
+    return values.length ? percentile(values, 0.90) : percentile(samples.map(s => Number(s[key])), 0.90);
+  };
+
+  const heelStrikeForceLeft = forceProxy(leftEvents, "leftFsr", "heel");
+  const heelStrikeForceRight = forceProxy(rightEvents, "rightFsr", "heel");
+  const toeOffForceLeft = forceProxy(leftEvents, "leftFsr", "toe");
+  const toeOffForceRight = forceProxy(rightEvents, "rightFsr", "toe");
+
+  const cycleIntervals = [];
+  for (const events of [leftEvents.contacts, rightEvents.contacts]) {
+    for (let i = 1; i < events.length; i += 1) cycleIntervals.push(events[i] - events[i - 1]);
+  }
+  const cycleMean = mean(cycleIntervals);
+  const gaitCycleVariability = cycleMean
+    ? (standardDeviation(cycleIntervals) / cycleMean) * 100
+    : 0;
+
+  // With the current two-shank IMU placement, this is a movement/tilt excursion
+  // proxy, not a clinically measured knee angle. A true knee ROM measurement
+  // requires a validated joint-angle setup (e.g. thigh + shank orientation).
+  const movementRomProxy = (side) => {
+    const tilt = samples.map(sample => {
+      const x = Number(sample[`${side}ImuX`]);
+      const y = Number(sample[`${side}ImuY`]);
+      const z = Number(sample[`${side}ImuZ`]);
+      if (![x, y, z].every(Number.isFinite)) return NaN;
+      return Math.atan2(Math.sqrt(x * x + y * y), z) * 180 / Math.PI;
+    }).filter(Number.isFinite);
+    return Math.max(0, percentile(tilt, 0.95) - percentile(tilt, 0.05));
+  };
+
+  const features = {
+    status: "Calculated",
+    durationSeconds,
+    sampleCount: samples.length,
+    stepCount: totalSteps,
+    cadence,
+    stanceTimeAsymmetry,
+    kneeRomLeft: movementRomProxy("left"),
+    kneeRomRight: movementRomProxy("right"),
+    loadDistributionLeft,
+    loadDistributionRight,
+    loadDistributionRatio: `${Math.round(loadDistributionLeft)}:${Math.round(loadDistributionRight)}`,
+    heelStrikeForceLeft,
+    heelStrikeForceRight,
+    toeOffForceLeft,
+    toeOffForceRight,
+    gaitCycleVariability,
+    leftStanceTime: leftStance,
+    rightStanceTime: rightStance,
+    leftContactCount: leftEvents.contacts.length,
+    rightContactCount: rightEvents.contacts.length,
+    leftPressureThreshold: leftEvents.threshold,
+    rightPressureThreshold: rightEvents.threshold,
+    note: "FSR force values are ADC proxies; knee ROM values are shank movement/tilt proxies with the current two-shank IMU setup.",
+  };
+  state.sensorFeatures = features;
+  return features;
+}
+
+function updateSensorFeatureUi() {
+  const f = state.sensorFeatures || extractSensorFeatures();
+  if (els.sensorFeatureSummary) {
+    els.sensorFeatureSummary.textContent = f.status === "Calculated"
+      ? `${f.sampleCount} valid samples • ${f.durationSeconds.toFixed(1)} s analyzed`
+      : f.note;
+  }
+  const set = (el, value) => { if (el) el.textContent = value; };
+  set(els.featureStepCount, `${Math.round(f.stepCount)}`);
+  set(els.featureCadence, `${f.cadence.toFixed(1)} steps/min`);
+  set(els.featureStanceAsymmetry, `${f.stanceTimeAsymmetry.toFixed(1)}%`);
+  set(els.featureLoadRatio, f.loadDistributionRatio);
+  set(els.featureHeelStrike, `${Math.round(f.heelStrikeForceLeft)} / ${Math.round(f.heelStrikeForceRight)} ADC`);
+  set(els.featureToeOff, `${Math.round(f.toeOffForceLeft)} / ${Math.round(f.toeOffForceRight)} ADC`);
+  set(els.featureGaitVariability, `${f.gaitCycleVariability.toFixed(1)}%`);
+  set(els.featureKneeRomLeft, `${f.kneeRomLeft.toFixed(1)}° proxy`);
+  set(els.featureKneeRomRight, `${f.kneeRomRight.toFixed(1)}° proxy`);
+  set(els.featureDuration, `${f.durationSeconds.toFixed(1)} s`);
+}
+
 function calculateRisk() {
   const intake = state.intakeData || {};
+  const features = extractSensorFeatures();
   const age = Number(intake.age ?? numberValue(els.age)) || 0;
   const bmi = Number(intake.bmi ?? calculateBmi() ?? numberValue(els.bmi)) || 0;
-  const pain = Number(intake.kneePainScore ?? numberValue(els.pain)) || 0;
-  const mobility = Number(intake.mobilityIssueScore ?? numberValue(els.mobility)) || 0;
-  const imuAsymmetry = Math.abs(state.latest.leftImu - state.latest.rightImu) / 0.5;
-  const loadAsymmetry = Math.abs(state.latest.leftFsr - state.latest.rightFsr) / 120;
+  const womac = Number(intake.womacScore ?? numberValue(els.womacScore)) || 0;
 
   const ageScore = Math.max(0, Math.min(18, (age - 40) * 0.55));
   const bmiScore = Math.max(0, Math.min(18, (bmi - 23) * 1.55));
-  const symptomScore = pain * 10 + mobility * 7;
-  const sensorScore = Math.min(24, imuAsymmetry * 12 + loadAsymmetry * 16);
+  const symptomScore = Math.min(20, womac * (20 / 96));
+  const gaitScore = Math.min(14, features.stanceTimeAsymmetry * 0.35 + features.gaitCycleVariability * 0.15);
+  const loadingAsymmetry = Math.abs(features.loadDistributionLeft - features.loadDistributionRight);
+  const loadScore = Math.min(14, loadingAsymmetry * 0.45);
+  const cadenceScore = features.cadence > 0 && features.cadence < 70 ? 4 : 0;
   const occupation = calculateOccupationRisk();
   const occupationScore = Math.min(12, occupation.totalScore * 0.24);
+  const sensorScore = Math.min(28, gaitScore + loadScore + cadenceScore);
 
-  state.risk = Math.round(Math.max(5, Math.min(96, ageScore + bmiScore + symptomScore + sensorScore + occupationScore)));
+  state.risk = Math.round(Math.max(5, Math.min(96,
+    ageScore + bmiScore + symptomScore + sensorScore + occupationScore
+  )));
 
   return {
     ageScore,
@@ -859,8 +1287,10 @@ function calculateRisk() {
     symptomScore,
     sensorScore,
     occupationScore,
-    imuAsymmetry,
-    loadAsymmetry,
+    stanceTimeAsymmetry: features.stanceTimeAsymmetry,
+    loadAsymmetry: loadingAsymmetry,
+    cadence: features.cadence,
+    gaitCycleVariability: features.gaitCycleVariability,
   };
 }
 
@@ -899,6 +1329,7 @@ function applyReportPreview(report) {
   const rightImu = report.rightImu ?? sensor.rightImu;
   const leftFsr = report.leftFsr ?? sensor.leftFsr;
   const rightFsr = report.rightFsr ?? sensor.rightFsr;
+  const capture = report.sensorCapture || {};
 
   if (els.fullReportPreview) {
     els.fullReportPreview.innerHTML = `
@@ -910,13 +1341,26 @@ function applyReportPreview(report) {
         <div><span>Patient ID</span><strong>${value(report.patientId)}</strong></div><div><span>Name</span><strong>${value(report.patientName)}</strong></div>
         <div><span>Age</span><strong>${value(report.age)}</strong></div><div><span>Gender</span><strong>${value(report.gender)}</strong></div>
         <div><span>Height</span><strong>${value(report.height)} cm</strong></div><div><span>Weight</span><strong>${value(report.weight)} kg</strong></div>
-        <div><span>BMI</span><strong>${value(report.bmi)}</strong></div><div><span>Knee pain</span><strong>${value(report.kneePain)}</strong></div>
-        <div><span>Pain duration</span><strong>${value(report.painDurationDays)} days</strong></div><div><span>Mobility issue</span><strong>${value(report.mobilityIssue)}</strong></div>
+        <div><span>BMI</span><strong>${value(report.bmi)}</strong></div><div><span>WOMAC score</span><strong>${value(report.womacScore)}</strong></div>
+        <div><span>Prior injury</span><strong>${value(report.priorInjuryHistory)}</strong></div>
+        <div><span>Activity level</span><strong>${value(report.activityLevel)}</strong></div><div><span>Pain duration</span><strong>${value(report.painDurationDays)} days</strong></div><div><span>Mobility issue</span><strong>${value(report.mobilityIssue)}</strong></div>
         <div><span>Occupation</span><strong>${value(report.occupation)}</strong></div><div><span>Occupation risk</span><strong>${value(report.occupationRiskLevel)} (${value(report.occupationRisk)} pts)</strong></div>
       </div></div>
       <div class="full-report-section"><h4>Risk assessment</h4><div class="full-report-grid">
         <div><span>OA risk</span><strong class="risk-preview-value ${riskStageClass(level)}">${value(level)}</strong></div><div><span>OA risk score</span><strong>${Number.isFinite(score) ? score : "Not recorded"}/100</strong></div>
       </div></div>
+      <div class="full-report-section"><h4>Sensor data quality</h4><div class="full-report-grid">
+        <div><span>Capture status</span><strong>${value(capture.status, "Not recorded")}</strong></div><div><span>Valid samples</span><strong>${value(capture.validSamples, "0")}</strong></div>
+        <div><span>Incomplete packets</span><strong>${value(capture.invalidSamples, "0")}</strong></div><div><span>Last missing fields</span><strong>${value((capture.lastMissingFields || []).join(", "), "None")}</strong></div>
+      </div></div>
+      <div class="full-report-section"><h4>Calculated gait &amp; loading features</h4><div class="full-report-grid">
+        <div><span>Step count</span><strong>${value(report.sensorFeatures?.stepCount)}</strong></div><div><span>Cadence</span><strong>${num(report.sensorFeatures?.cadence,1)} steps/min</strong></div>
+        <div><span>Stance-time asymmetry</span><strong>${num(report.sensorFeatures?.stanceTimeAsymmetry,1)}%</strong></div><div><span>Load distribution</span><strong>${value(report.sensorFeatures?.loadDistributionRatio)}</strong></div>
+        <div><span>Heel-strike force proxy</span><strong>L ${num(report.sensorFeatures?.heelStrikeForceLeft,0)} / R ${num(report.sensorFeatures?.heelStrikeForceRight,0)} ADC</strong></div>
+        <div><span>Toe-off force proxy</span><strong>L ${num(report.sensorFeatures?.toeOffForceLeft,0)} / R ${num(report.sensorFeatures?.toeOffForceRight,0)} ADC</strong></div>
+        <div><span>Gait-cycle variability</span><strong>${num(report.sensorFeatures?.gaitCycleVariability,1)}%</strong></div>
+        <div><span>Movement ROM proxy</span><strong>L ${num(report.sensorFeatures?.kneeRomLeft,1)}° / R ${num(report.sensorFeatures?.kneeRomRight,1)}°</strong></div>
+      </div><p class="report-note">FSR values are ADC loading proxies. Movement ROM values are shank tilt/movement proxies, not clinically validated knee angles.</p></div>
       <div class="full-report-section"><h4>IMU readings</h4><div class="full-report-grid">
         <div><span>Left accelerometer</span><strong>${num(leftImu)} g</strong></div><div><span>Right accelerometer</span><strong>${num(rightImu)} g</strong></div>
         <div><span>Left acceleration axes</span><strong>X ${num(report.leftImuX)} / Y ${num(report.leftImuY)} / Z ${num(report.leftImuZ)} g</strong></div>
@@ -936,107 +1380,30 @@ function applyReportPreview(report) {
   if (panel) panel.classList.add("report-preview-highlight");
 }
 
-async function fetchMlPrediction() {
-  if (state.isFetchingMl) return;
-  state.isFetchingMl = true;
-  try {
-    const intake = state.intakeData || {};
-    const age = Number(intake.age ?? numberValue(els.age)) || 50;
-    const bmi = Number(intake.bmi ?? calculateBmi() ?? numberValue(els.bmi)) || 25.0;
-    const pain = Number(intake.kneePainScore ?? numberValue(els.pain)) || 1;
-    const mobility = Number(intake.mobilityIssueScore ?? numberValue(els.mobility)) || 0;
-
-    const imuAsym = Math.abs(state.latest.leftImu - state.latest.rightImu);
-    const fsrAsym = Math.abs(state.latest.leftFsr - state.latest.rightFsr);
-
-    const payload = {
-      age,
-      sex: intake.gender || els.gender?.value || "Female",
-      bmi,
-      vas_pain_score: Math.min(10, Math.max(0, pain * 3.3)),
-      womac_score: Math.min(96, Math.max(0, (pain + mobility) * 12)),
-      prior_injury_history: "No Prior Injury",
-      activity_level: state.occupationData?.occupationType === "heavy" || state.occupationData?.occupationType === "athletic" ? "High" : "Moderate",
-      stance_time_asymmetry: Math.round(Math.min(30, imuAsym * 15 + fsrAsym * 0.05) * 10) / 10,
-      knee_rom_left: Math.round(Math.max(30, 65 - state.latest.leftImu * 5) * 10) / 10,
-      knee_rom_right: Math.round(Math.max(30, 65 - state.latest.rightImu * 5) * 10) / 10,
-      load_distribution_ratio: state.latest.rightFsr > 0 ? Math.round((state.latest.leftFsr / state.latest.rightFsr) * 100) / 100 : 1.0,
-      cadence: 100.0,
-      heel_strike_force_left: Math.round(Math.max(0.5, state.latest.leftImu || 1.1) * 10) / 10,
-      heel_strike_force_right: Math.round(Math.max(0.5, state.latest.rightImu || 1.1) * 10) / 10,
-      toe_off_force_left: 1.0,
-      toe_off_force_right: 1.0,
-      gait_cycle_variability: Math.round(Math.min(15, fsrAsym / 40 + 2.0) * 10) / 10
-    };
-
-    const res = await fetch("/api/ml/predict-risk", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    if (res.ok) {
-      const mlResult = await res.json();
-      if (mlResult && mlResult.ok) {
-        state.mlResult = mlResult;
-        updateMlUi(mlResult);
-      }
-    }
-  } catch (err) {
-    console.warn("ML Prediction API call fallback:", err);
-  } finally {
-    state.isFetchingMl = false;
-  }
-}
-
-function updateMlUi(mlResult) {
-  if (!mlResult) return;
-  const questPct = mlResult.feature_attribution_share?.Questionnaire_percent ?? 39.6;
-  const sensorPct = mlResult.feature_attribution_share?.Wearable_Sensor_percent ?? 60.4;
-  
-  if (els.mlShareQuest) els.mlShareQuest.style.width = `${questPct}%`;
-  if (els.mlShareSensor) els.mlShareSensor.style.width = `${sensorPct}%`;
-  if (els.mlQuestPct) els.mlQuestPct.textContent = `${questPct}%`;
-  if (els.mlSensorPct) els.mlSensorPct.textContent = `${sensorPct}%`;
-
-  if (mlResult.predicted_risk_tier) {
-    const tier = mlResult.predicted_risk_tier;
-    const conf = mlResult.confidence_score;
-    els.riskSummary.textContent = `Random Forest AI Model Prediction: ${tier} Risk (${conf}% confidence). Analyzed patient intake and live sensor telemetry.`;
-  }
-}
-
 function updateRiskUi(factors) {
   const score = state.risk;
   const level = riskLabel(score);
   const circumference = 402;
   els.riskScore.textContent = score;
   els.riskLevel.textContent = `${level.label} risk`;
+  if (els.mlEngineRisk) els.mlEngineRisk.textContent = `${level.label} • ${score}/100`;
   els.meterValue.style.stroke = level.color;
   els.meterValue.style.strokeDashoffset = String(circumference - (score / 100) * circumference);
-  
-  if (state.mlResult && state.mlResult.predicted_risk_tier) {
-    els.riskSummary.textContent = `Random Forest AI Model Prediction: ${state.mlResult.predicted_risk_tier} Risk (${state.mlResult.confidence_score}% confidence). Analyzed patient intake and live sensor telemetry.`;
-  } else {
-    els.riskSummary.textContent =
-      level.label === "High"
-        ? "Sensor asymmetry and symptoms suggest this patient should be flagged for clinical follow-up."
-        : level.label === "Moderate"
-          ? "The result suggests measurable risk factors. Repeat screening and compare reports over time."
-          : "Current values are low risk, but this is a screening aid and not a medical diagnosis.";
-  }
+  els.riskSummary.textContent =
+    level.label === "High"
+      ? "Sensor asymmetry and symptoms suggest this patient should be flagged for clinical follow-up."
+      : level.label === "Moderate"
+        ? "The result suggests measurable risk factors. Repeat screening and compare reports over time."
+        : "Current values are low risk, but this is a screening aid and not a medical diagnosis.";
 
   const factorRows = [
     ["Symptom score", `${Math.round(factors.symptomScore)} pts`],
     ["BMI contribution", `${Math.round(factors.bmiScore)} pts`],
-    ["IMU asymmetry", `${Math.round(factors.imuAsymmetry * 100)}%`],
-    ["Load asymmetry", `${Math.round(factors.loadAsymmetry * 100)}%`],
+    ["Stance-time asymmetry", `${Number(factors.stanceTimeAsymmetry || 0).toFixed(1)}%`],
+    ["Foot-loading asymmetry", `${Number(factors.loadAsymmetry || 0).toFixed(1)}%`],
+    ["Gait-cycle variability", `${Number(factors.gaitCycleVariability || 0).toFixed(1)}%`],
     ["Occupation contribution", `${Math.round(factors.occupationScore)} pts`],
   ];
-
-  if (state.mlResult) {
-    factorRows.unshift(["AI ML Model Prediction", `${state.mlResult.predicted_risk_tier} (${state.mlResult.confidence_score}% conf)`]);
-  }
 
   els.factorList.innerHTML = factorRows
     .map(([name, value]) => `<div class="factor"><span>${name}</span><strong>${value}</strong></div>`)
@@ -1126,6 +1493,21 @@ function updateTelemetryUi() {
   els.rightFsr.textContent = `${Math.round(state.latest.rightFsr)} ADC`;
   els.leftFsrMeta.textContent = `Raw analog: ${Math.round(state.latest.leftFsr)}${state.latest.leftFsrVoltage ? ` • ${state.latest.leftFsrVoltage.toFixed(2)} V` : ""}`;
   els.rightFsrMeta.textContent = `Raw analog: ${Math.round(state.latest.rightFsr)}${state.latest.rightFsrVoltage ? ` • ${state.latest.rightFsrVoltage.toFixed(2)} V` : ""}`;
+  updateSensorConnectionStatuses();
+}
+
+
+function updateSensorConnectionStatuses() {
+  const setStatus = (element, connected, label) => {
+    if (!element) return;
+    element.classList.toggle("connected", !!connected);
+    element.classList.toggle("disconnected", !connected);
+    element.innerHTML = `<i></i> ${label} ${connected ? "connected" : "disconnected"}`;
+  };
+  setStatus(els.imuConnectionStatus, state.imuConnected, "IMU");
+  setStatus(els.pressureConnectionStatus, state.pressureConnected, "Pressure");
+  setStatus(els.imuModuleStatus, state.imuConnected, "IMU");
+  setStatus(els.pressureModuleStatus, state.pressureConnected, "Pressure");
 }
 
 function drawChart() {
@@ -1202,31 +1584,52 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-function updateGait3D(source = "Live sensor stream") {
-  const left = Number(state.latest?.leftImu ?? 0.9);
-  const right = Number(state.latest?.rightImu ?? 0.9);
-  const leftLoad = Number(state.latest?.leftFsr ?? 180);
-  const rightLoad = Number(state.latest?.rightFsr ?? 180);
-  const phaseBase = ((state.tick * 7) % 100);
-  const leftPhase = Math.round((phaseBase + Math.max(-12, Math.min(12, (left - 0.9) * 55))) % 100);
-  const rightPhase = Math.round((phaseBase + 50 + Math.max(-12, Math.min(12, (right - 0.9) * 55))) % 100);
-  const loadTotal = Math.max(1, leftLoad + rightLoad);
-  const symmetry = Math.round(100 - Math.min(45, Math.abs(leftLoad - rightLoad) / loadTotal * 100));
-  const balance = symmetry >= 90 ? "Balanced" : symmetry >= 75 ? "Mild variation" : "Asymmetric";
-  const leftSwing = Math.sin((leftPhase / 100) * Math.PI * 2) * 17;
-  const rightSwing = Math.sin((rightPhase / 100) * Math.PI * 2) * 17;
-  const leftDepth = Math.cos((leftPhase / 100) * Math.PI * 2) * 7;
-  const rightDepth = Math.cos((rightPhase / 100) * Math.PI * 2) * 7;
-  if (els.leftLeg3d) els.leftLeg3d.style.transform = `translate3d(${leftSwing}px,0,${leftDepth}px) rotateY(${leftSwing * 0.45}deg) rotateZ(${leftSwing * 0.10}deg)`;
-  if (els.rightLeg3d) els.rightLeg3d.style.transform = `translate3d(${rightSwing}px,0,${rightDepth}px) rotateY(${rightSwing * 0.45}deg) rotateZ(${rightSwing * 0.10}deg)`;
-  if (els.gaitLeftPhase) els.gaitLeftPhase.textContent = `${leftPhase}%`;
-  if (els.gaitRightPhase) els.gaitRightPhase.textContent = `${rightPhase}%`;
-  if (els.gaitSymmetry) els.gaitSymmetry.textContent = `${symmetry}%`;
-  if (els.gaitBalance) els.gaitBalance.textContent = balance;
-  if (els.gait3dSource) els.gait3dSource.textContent = source;
-  if (els.gait3dText) els.gait3dText.textContent = state.streaming
-    ? `${balance} • bilateral gait is updating from the live physical IMU + FSR stream.`
-    : "Start the sensor stream to see both legs move through a synchronized gait cycle.";
+function updateInteractiveLegAnalysis(report = null) {
+  const stage = els.legAnalysisStage;
+  if (!stage) return;
+  const leftImu = Number(state.latest?.leftImu ?? 0);
+  const rightImu = Number(state.latest?.rightImu ?? 0);
+  const leftLoad = Number(state.latest?.leftFsr ?? 0);
+  const rightLoad = Number(state.latest?.rightFsr ?? 0);
+  const totalLoad = leftLoad + rightLoad;
+  const balance = totalLoad > 0 ? Math.round(100 - Math.min(100, Math.abs(leftLoad - rightLoad) / totalLoad * 100)) : null;
+  const angle = Math.max(-24, Math.min(24, (rightImu - leftImu) * 28));
+  const gait = state.imuConnected && state.pressureConnected ? "Live hardware" : state.hardwareConnected ? "Waiting for sensor data" : "Waiting";
+  if (els.legAngleValue) els.legAngleValue.textContent = `${angle >= 0 ? "+" : ""}${angle.toFixed(1)}°`;
+  if (els.legLoadValue) els.legLoadValue.textContent = balance === null ? "—" : `${balance}% balanced`;
+  if (els.legGaitValue) els.legGaitValue.textContent = gait;
+  if (els.legAnalysisMode) els.legAnalysisMode.textContent = state.hardwareConnected ? "Live cursor + hardware" : "Cursor tracking";
+  const level = String(report?.oaRisk || report?.level || "").toLowerCase();
+  stage.classList.remove("risk-low", "risk-moderate", "risk-high", "risk-critical");
+  stage.classList.add(level.includes("critical") ? "risk-critical" : level.includes("high") ? "risk-high" : level.includes("moderate") ? "risk-moderate" : "risk-low");
+  if (els.legAnalysisVisual) els.legAnalysisVisual.style.setProperty("--leg-tilt", `${angle}deg`);
+}
+
+function setLegAnalysisMarker(marker) {
+  const detail = {
+    "Knee movement": "Knee movement",
+    "Shank motion": "Shank motion",
+    "Foot loading": "Foot loading"
+  }[marker] || "Knee movement";
+  if (els.legAnalysisMarker) els.legAnalysisMarker.textContent = detail;
+  if (els.kneeMarkerDetail) els.kneeMarkerDetail.textContent = detail;
+  if (els.kneeMarkerEyebrow) els.kneeMarkerEyebrow.textContent = "Analysis point";
+  document.querySelectorAll("[data-leg-marker]").forEach((node) => node.classList.toggle("active", node.dataset.legMarker === marker));
+}
+
+function handleLegCursor(event) {
+  if (!els.legAnalysisStage || !els.legAnalysisVisual) return;
+  const rect = els.legAnalysisStage.getBoundingClientRect();
+  const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+  const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
+  const tilt = (x - 0.5) * 30;
+  const bend = (0.5 - y) * 18;
+  els.legAnalysisVisual.style.setProperty("--cursor-tilt", `${tilt.toFixed(1)}deg`);
+  els.legAnalysisVisual.style.setProperty("--cursor-bend", `${bend.toFixed(1)}deg`);
+  if (els.legCursorPoint) els.legCursorPoint.setAttribute("transform", `translate(${(x * 430 + 45).toFixed(1)} ${(y * 500 + 55).toFixed(1)})`);
+  if (els.legCursorRay) els.legCursorRay.setAttribute("d", `M231 286 L${(x * 430 + 45).toFixed(1)} ${(y * 500 + 55).toFixed(1)}`);
+  const marker = y < 0.42 ? "Knee movement" : y < 0.76 ? "Shank motion" : "Foot loading";
+  setLegAnalysisMarker(marker);
 }
 
 const markerDetails = {
@@ -1282,19 +1685,12 @@ function selectKneeMarker(marker) {
 
 function updateInteractiveKneeVisual(report) {
   const score = report ? Number(report.oaRiskScore ?? report.score ?? 0) : 0;
-  const stage = document.querySelector("#kneeRiskStage");
-  if (stage) {
-    stage.classList.add("latest-analysis");
-    stage.classList.remove("risk-low", "risk-moderate", "risk-high", "risk-critical");
-    const level = String(report?.oaRisk || report?.level || "").toLowerCase();
-    const riskClass = level.includes("critical") ? "risk-critical" : level.includes("high") ? "risk-high" : level.includes("moderate") || level.includes("medium") ? "risk-moderate" : "risk-low";
-    if (report) stage.classList.add(riskClass);
-  }
   if (els.oaMarkerRisk) els.oaMarkerRisk.textContent = report ? `${Math.max(0, Math.min(100, Math.round(score)))}/100` : "—";
   if (els.oaMarkerRiskMeta) els.oaMarkerRiskMeta.textContent = report
     ? `${report.patientName || report.patientId || "Latest patient"} • ${report.oaRisk || report.level || "Not assessed"} • ${new Date(report.dateTime || report.createdAt).toLocaleString()}`
     : "Complete a screening to show the latest result.";
-  selectKneeMarker("Medial load");
+  updateInteractiveLegAnalysis(report);
+  setLegAnalysisMarker("Knee movement");
 }
 
 function sensorValue(sensor) {
@@ -1330,32 +1726,30 @@ function updateSensorPlacementVisual() {
 }
 
 function initInteractiveVisuals() {
-  document.querySelectorAll(".marker-select").forEach((button) => {
-    button.addEventListener("click", () => selectKneeMarker(button.dataset.marker));
-  });
-  document.querySelectorAll(".hotspot,.load-zone").forEach((node) => {
-    node.addEventListener("click", () => selectKneeMarker(node.dataset.marker));
+  document.querySelectorAll("[data-leg-marker]").forEach((node) => {
+    node.addEventListener("click", () => setLegAnalysisMarker(node.dataset.legMarker));
     node.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        selectKneeMarker(node.dataset.marker);
-      }
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setLegAnalysisMarker(node.dataset.legMarker); }
     });
   });
+  if (els.legAnalysisStage) {
+    els.legAnalysisStage.addEventListener("pointermove", handleLegCursor);
+    els.legAnalysisStage.addEventListener("pointerleave", () => {
+      if (els.legAnalysisMode) els.legAnalysisMode.textContent = state.hardwareConnected ? "Live hardware" : "Cursor tracking";
+    });
+  }
   document.querySelectorAll(".sensor-choice").forEach((button) => {
     button.addEventListener("click", () => selectSensorPlacement(button.dataset.sensor));
   });
   document.querySelectorAll(".sensor-hotspot").forEach((node) => {
     node.addEventListener("click", () => selectSensorPlacement(node.dataset.sensor));
     node.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        selectSensorPlacement(node.dataset.sensor);
-      }
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectSensorPlacement(node.dataset.sensor); }
     });
   });
-  selectKneeMarker("Medial load");
+  setLegAnalysisMarker("Knee movement");
   selectSensorPlacement("Left IMU");
+  updateSensorConnectionStatuses();
 }
 
 async function renderOverview() {
@@ -1452,7 +1846,7 @@ async function renderReports() {
         <td>${sensorValue(report.rightFsr, sensors.rightFsr, "N", 1)}</td>
         <td>
           <div class="report-table-actions">
-            <button type="button" class="report-action-button report-download-button" data-report-action="download" data-report-id="${escapeHtml(report.id || "")}">Download</button>
+            <button type="button" class="report-action-button report-download-button" data-report-action="download" data-report-id="${escapeHtml(report.id || "")}" ${isReportWorkflowComplete(report) ? "" : "disabled aria-disabled=\"true\" title=\"Complete all screening steps before downloading\""}>Download</button>
             <button type="button" class="report-action-button report-view-button" data-report-action="view" data-report-id="${escapeHtml(report.id || "")}">View</button>
           </div>
         </td>
@@ -1466,6 +1860,7 @@ function buildCurrentReport() {
   const occupationRiskLevel = occupationRisk.totalScore >= 30 ? "High" : occupationRisk.totalScore >= 15 ? "Moderate" : "Low";
   const selectedText = (element) => element.options[element.selectedIndex]?.textContent || "Not recorded";
   const now = new Date();
+  const workflowComplete = !!state.intakeSubmitted && !!state.sensorSubmitted && !!state.occupationSubmitted && !!state.riskCompleted;
   return {
     id: generateId(),
     createdAt: Date.now(),
@@ -1480,11 +1875,8 @@ function buildCurrentReport() {
     weight: state.intakeData?.weight ?? numberValue(els.weight),
     bmi: state.intakeData?.bmi ?? calculateBmi() ?? numberValue(els.bmi),
     gender: state.intakeData?.gender || els.gender?.value || "Not recorded",
-    kneePain: state.intakeData?.kneePain || selectedText(els.pain),
-    kneePainScore: state.intakeData?.kneePainScore ?? numberValue(els.pain),
-    painDurationDays: state.intakeData?.painDurationDays ?? numberValue(els.painDurationDays),
-    mobilityIssue: state.intakeData?.mobilityIssue || selectedText(els.mobility),
-    mobilityIssueScore: state.intakeData?.mobilityIssueScore ?? numberValue(els.mobility),
+    womacScore: state.intakeData?.womacScore ?? calculateWomacScore(),
+    priorInjuryHistory: state.intakeData?.priorInjuryHistory || els.priorInjuryHistory?.value || "Not recorded",
     occupation: state.occupationData?.occupation || getOccupationLabel(),
     occupationRisk: occupationRisk.totalScore,
     occupationRiskLevel,
@@ -1493,6 +1885,14 @@ function buildCurrentReport() {
     score: state.risk,
     level: riskLabel(state.risk).label,
     sensors: { ...state.latest },
+    workflow: {
+      intake: !!state.intakeSubmitted,
+      sensors: !!state.sensorSubmitted,
+      occupation: !!state.occupationSubmitted,
+      screening: !!state.riskCompleted,
+      complete: workflowComplete,
+    },
+    sensorFeatures: { ...(state.sensorFeatures || extractSensorFeatures()) },
     sensorCapture: {
       status: isSensorCaptureReady() ? "Complete" : "Incomplete",
       validSamples: state.sensorQuality.validSamples,
@@ -1518,8 +1918,7 @@ function buildCurrentReport() {
     rightImu: state.latest.rightImu,
     leftFsr: state.latest.leftFsr,
     rightFsr: state.latest.rightFsr,
-    mlResult: state.mlResult || null,
-    schemaVersion: 9,
+    schemaVersion: 10,
     storage: "IndexedDB",
   };
 }
@@ -1549,18 +1948,27 @@ function createPdfBlob(report) {
     ["Weight (kg)", report.weight],
     ["BMI", report.bmi],
     ["Gender", report.gender],
-    ["Knee Pain", report.kneePain],
-    ["Pain Duration (days)", report.painDurationDays],
-    ["Mobility Issue", report.mobilityIssue],
+    ["WOMAC Score", report.womacScore],
+    ["Prior Injury History", report.priorInjuryHistory],
     ["Occupation", report.occupation],
     ["Occupation Risk", `${report.occupationRiskLevel} (${report.occupationRisk} pts)`],
     ["OA Risk", `${report.oaRisk}`],
     ["OA Risk Score", report.oaRiskScore],
+    ["Sensor capture status", report.sensorCapture?.status || "Not recorded"],
+    ["Valid sensor samples", report.sensorCapture?.validSamples ?? 0],
+    ["Incomplete sensor packets", report.sensorCapture?.invalidSamples ?? 0],
+    ["Missing sensor fields", (report.sensorCapture?.lastMissingFields || []).join(", ") || "None"],
   ];
-  if (report.mlResult) {
-    rows.push(["AI ML Model Prediction", `${report.mlResult.predicted_risk_tier} Risk (${report.mlResult.confidence_score}% confidence)`]);
-    rows.push(["Feature Share (Quest/Sensor)", `${report.mlResult.feature_attribution_share?.Questionnaire_percent}% Intake / ${report.mlResult.feature_attribution_share?.Wearable_Sensor_percent}% Sensors`]);
-  }
+  const featureRows = [
+    ["Step count", report.sensorFeatures?.stepCount ?? "Not recorded"],
+    ["Cadence", `${Number(report.sensorFeatures?.cadence ?? 0).toFixed(1)} steps/min`],
+    ["Stance-time asymmetry", `${Number(report.sensorFeatures?.stanceTimeAsymmetry ?? 0).toFixed(1)} %`],
+    ["Load distribution", report.sensorFeatures?.loadDistributionRatio || "Not recorded"],
+    ["Heel-strike force proxy", `L ${Math.round(Number(report.sensorFeatures?.heelStrikeForceLeft ?? 0))} / R ${Math.round(Number(report.sensorFeatures?.heelStrikeForceRight ?? 0))} ADC`],
+    ["Toe-off force proxy", `L ${Math.round(Number(report.sensorFeatures?.toeOffForceLeft ?? 0))} / R ${Math.round(Number(report.sensorFeatures?.toeOffForceRight ?? 0))} ADC`],
+    ["Gait-cycle variability", `${Number(report.sensorFeatures?.gaitCycleVariability ?? 0).toFixed(1)} %`],
+    ["Movement ROM proxy", `L ${Number(report.sensorFeatures?.kneeRomLeft ?? 0).toFixed(1)}° / R ${Number(report.sensorFeatures?.kneeRomRight ?? 0).toFixed(1)}°`],
+  ];
   const sensorRows = [
     ["Left IMU magnitude", sensor(report.leftImu, "g")],
     ["Left IMU axes", `X ${sensor(report.leftImuX, "g")} / Y ${sensor(report.leftImuY, "g")} / Z ${sensor(report.leftImuZ, "g")}`],
@@ -1583,6 +1991,9 @@ function createPdfBlob(report) {
     ...rows.flatMap(([label, value]) => [
       { text: `${label}: ${value}`, size: 10, bold: false }
     ]),
+    { text: "", size: 10 },
+    { text: "Calculated Gait & Loading Features", size: 14, bold: true },
+    ...featureRows.map(([label, value]) => ({ text: `${label}: ${value}`, size: 10, bold: false })),
     { text: "", size: 10 },
     { text: "Sensor Values", size: 14, bold: true },
     ...sensorRows.map(([label, value]) => ({ text: `${label}: ${value}`, size: 10, bold: false })),
@@ -1642,7 +2053,19 @@ function createPdfBlob(report) {
   return new Blob([pdf], { type: "application/pdf" });
 }
 
+function isReportWorkflowComplete(report) {
+  // Reports created before sequential workflow tracking remain downloadable.
+  // Only reports that carry the new workflow metadata are subject to the
+  // sequential-completion check. This preserves access to existing reports.
+  if (!report?.workflow) return true;
+  return report.workflow.complete === true;
+}
+
 function downloadReport(report) {
+  if (!isReportWorkflowComplete(report)) {
+    setNotification("This report cannot be downloaded because the sequential screening workflow is incomplete.", false);
+    return false;
+  }
   const blob = createPdfBlob(report);
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -1652,16 +2075,18 @@ function downloadReport(report) {
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return true;
 }
-
-function resetSensors() { resetSensorReadings(); }
 
 function updateAll() {
   calculateBmi();
   const factors = calculateRisk();
   updateTelemetryUi();
+  updateSensorFeatureUi();
+  updateSensorSubmitButton();
   updateRiskUi(factors);
   updateSensorPlacementVisual();
+  updateInteractiveLegAnalysis();
   drawChart();
 }
 
@@ -1677,6 +2102,34 @@ function showSubmitStatus(element, message) {
     submitStatusTimers.delete(element);
   }, 3000);
   submitStatusTimers.set(element, timer);
+}
+
+function calculateWomacScore() {
+  const answers = Array.from(document.querySelectorAll('input[name^="womac-"]:checked')).map(input => Number(input.value));
+  const score = answers.length ? answers.reduce((sum, value) => sum + value, 0) : 0;
+  const display = document.querySelector("#womacLiveScore");
+  if (display) display.textContent = `${score} / 96`;
+  return score;
+}
+
+function validateWomacQuestionnaire() {
+  const groups = Array.from(new Set(
+    Array.from(document.querySelectorAll('input[name^="womac-"]')).map(input => input.name)
+  ));
+  const answered = groups.filter(name => document.querySelector(`input[name="${name}"]:checked`)).length;
+  calculateWomacScore();
+  if (answered !== groups.length) {
+    const firstUnanswered = groups.find(name => !document.querySelector(`input[name="${name}"]:checked`));
+    const target = firstUnanswered ? document.querySelector(`input[name="${firstUnanswered}"]`) : null;
+    if (target) {
+      const question = target.closest(".womac-question");
+      question?.scrollIntoView({ behavior: "smooth", block: "center" });
+      target.focus({ preventScroll: true });
+    }
+    setNotification(`Please answer all WOMAC questions (${answered}/${groups.length} completed).`, false);
+    return false;
+  }
+  return true;
 }
 
 function validatePatientForm() {
@@ -1702,11 +2155,12 @@ els.patientName.addEventListener("input", () => {
   els.intakeSubmitStatus.classList.remove("visible");
 });
 
-els.form.addEventListener("input", updateAll);
-els.form.addEventListener("change", updateAll);
+els.form.addEventListener("input", () => { calculateWomacScore(); updateAll(); });
+els.form.addEventListener("change", () => { calculateWomacScore(); updateAll(); });
 els.form.addEventListener("submit", (event) => {
   event.preventDefault();
   if (!validatePatientForm()) return;
+  if (!validateWomacQuestionnaire()) return;
   const selectedText = (element) => element.options[element.selectedIndex]?.textContent || "Not recorded";
   state.intakeData = {
     patientId: els.patientId.value.trim(),
@@ -1716,17 +2170,16 @@ els.form.addEventListener("submit", (event) => {
     weight: numberValue(els.weight),
     bmi: calculateBmi() ?? numberValue(els.bmi),
     gender: els.gender.value,
-    kneePain: selectedText(els.pain),
-    kneePainScore: numberValue(els.pain),
-    painDurationDays: numberValue(els.painDurationDays),
-    mobilityIssue: selectedText(els.mobility),
-    mobilityIssueScore: numberValue(els.mobility),
+    womacScore: calculateWomacScore(),
+    priorInjuryHistory: els.priorInjuryHistory.value,
   };
   state.intakeSubmitted = true;
   showSubmitStatus(els.intakeSubmitStatus, "Submitted successfully");
   els.form.reset();
   els.patientName.setCustomValidity("");
   updateAll();
+  setNotification("Patient information submitted successfully. Continue with sensor capture.", true);
+  showRoute("sensors");
 });
 
 els.occupationForm.addEventListener("input", () => {
@@ -1741,6 +2194,16 @@ els.occupationForm.addEventListener("change", () => {
 });
 els.occupationForm.addEventListener("submit", (event) => {
   event.preventDefault();
+  if (!state.intakeSubmitted) {
+    setNotification("Complete Patient Intake before submitting Occupation.", false);
+    showRoute("intake");
+    return;
+  }
+  if (!state.sensorSubmitted || !isSensorCaptureReady()) {
+    setNotification("Complete real ESP32 sensor capture before submitting Occupation.", false);
+    showRoute("sensors");
+    return;
+  }
   if (!els.occupationForm.checkValidity()) {
     els.occupationForm.reportValidity();
     return;
@@ -1760,45 +2223,106 @@ els.occupationForm.addEventListener("submit", (event) => {
   updateAll();
 });
 
-window.addEventListener("hashchange", () => showRoute(currentRoute()));
+window.addEventListener("hashchange", async () => {
+  await showRoute(currentRoute());
+});
 
 els.startStream.addEventListener("click", async () => {
-  try {
-    await connectHardware();
-  } catch (error) {
-    setNotification(error?.message || "Unable to connect to the ESP32.", false);
-    els.streamState.textContent = "Connection failed";
-  }
-});
-
-els.stopStream.addEventListener("click", () => {
-  state.capturing = false;
-  state.sensorSubmitted = state.sampleCount > 0;
-  els.streamState.textContent = state.hardwareConnected ? "Connected • capture stopped" : "Hardware disconnected";
-  if (state.sensorSubmitted) setNotification("Real sensor capture stopped. The latest MPU6050 and FSR readings are ready for analysis.", true);
-  updateAll();
-});
-
-els.exitStream.addEventListener("click", async () => {
-  try {
-    if (state.hardwareCharacteristic) {
-      try { await state.hardwareCharacteristic.stopNotifications(); } catch (_) {}
-      state.hardwareCharacteristic.removeEventListener("characteristicvaluechanged", handleBleNotification);
+  if (!state.hardwareConnected) {
+    if (!state.intakeSubmitted) {
+      setNotification("Complete Patient Intake before starting sensor capture.", false);
+      showRoute("intake");
+      return;
     }
-    if (state.hardwareDevice?.gatt?.connected) state.hardwareDevice.gatt.disconnect();
-  } finally {
-    handleHardwareDisconnected();
+    try {
+      await connectHardware();
+      els.startStream.textContent = "Stop";
+      els.startStream.dataset.sensorAction = "stop";
+    } catch (error) {
+      setNotification(error?.message || "Unable to connect to the ESP32.", false);
+      els.streamState.textContent = "Connection failed";
+    }
+    return;
   }
+
+  if (state.capturing) {
+    state.capturing = false;
+    state.streaming = false;
+    els.streamState.textContent = "Capture paused";
+    els.streamState.classList.remove("green");
+    els.startStream.textContent = "Resume";
+    els.startStream.dataset.sensorAction = "resume";
+    updateSensorSubmitButton();
+    updateAll();
+    setNotification("Sensor capture paused. Click Resume to continue collecting readings.", true);
+  } else {
+    state.capturing = true;
+    state.streaming = true;
+    state.sensorQuality.lastPacketAt = Date.now();
+    els.streamState.textContent = "Connected • capturing";
+    els.streamState.classList.add("green");
+    els.startStream.textContent = "Stop";
+    els.startStream.dataset.sensorAction = "stop";
+    updateSensorSubmitButton();
+    updateAll();
+    setNotification("Sensor capture resumed.", true);
+  }
+});
+
+els.submitSensorData.addEventListener("click", async () => {
+  if (!state.hardwareConnected) {
+    setNotification("Connect the ESP32 before submitting sensor data.", false);
+    return;
+  }
+  if (!isSensorCaptureReady()) {
+    setNotification("Collect at least 10 complete sensor samples before submitting.", false);
+    return;
+  }
+
+  state.capturing = false;
+  state.streaming = false;
+  state.captureEndedAt = Date.now();
+  state.sensorFeatures = extractSensorFeatures();
+  state.sensorSubmitted = true;
+
+  if (state.hardwareCharacteristic) {
+    try { await state.hardwareCharacteristic.stopNotifications(); } catch (_) {}
+    state.hardwareCharacteristic.removeEventListener("characteristicvaluechanged", handleBleNotification);
+  }
+
+  els.streamState.textContent = "Sensor data submitted";
+  els.streamState.classList.add("green");
+  els.startStream.hidden = false;
+  els.startStream.textContent = "Resume";
+  els.startStream.dataset.sensorAction = "resume";
+  els.submitSensorData.hidden = false;
+  els.submitSensorData.disabled = true;
+
+  updateAll();
+  setNotification("Sensor data submitted successfully. Continue with Occupation assessment.", true);
+  showRoute("occupation");
 });
 
 async function handleSaveReport() {
-  if (!isSensorCaptureReady()) {
-    setNotification("Connect the ESP32 and capture at least 10 complete sensor samples before saving a final risk report.", false);
+  // Risk Result / report generation is the final action in the sequential data workflow.
+  if (!state.intakeSubmitted) {
+    setNotification("Complete Patient Intake before generating the risk report.", false);
+    showRoute("intake");
     return;
   }
+  if (!state.sensorSubmitted || !isSensorCaptureReady()) {
+    setNotification("Complete the real ESP32 sensor capture before generating the risk report.", false);
+    showRoute("sensors");
+    return;
+  }
+  if (!state.occupationSubmitted) {
+    setNotification("Complete Occupation assessment before generating the risk report.", false);
+    showRoute("occupation");
+    return;
+  }
+  state.riskCompleted = true;
   const report = buildCurrentReport();
   await saveReport(report);
-  state.riskCompleted = true;
   state.reportSaved = true;
   await renderReports();
   await renderOverview();
@@ -1808,7 +2332,6 @@ async function handleSaveReport() {
 
 els.saveReportInline.addEventListener("click", handleSaveReport);
 
-els.resetSensors.addEventListener("click", resetSensors);
 
 async function handleReportAction(action, reportId) {
   const reports = await getReports();
@@ -2017,15 +2540,21 @@ async function initializeApp() {
   initLanguageSupport();
   setupAppInstall();
   els.logoutButton.addEventListener("click", logout);
-  showRoute(currentRoute());
-  updateAll();
+  // Open the current IndexedDB first, recover any older local records, and only
+  // then render the first route. This keeps the initial Overview history in sync
+  // with the same database used after later module navigation.
+  await openDb();
   const recoveredCount = await recoverLegacyReports();
-  await renderReports();
-  await renderOverview();
   restoreNotification();
-  if (recoveredCount > 0) setNotification(`Recovered ${recoveredCount} previous local screening record${recoveredCount === 1 ? "" : "s"}.`, true);
-  setInterval(updateAll, 1000);
+  if (recoveredCount > 0) {
+    setNotification(`Recovered ${recoveredCount} previous local screening record${recoveredCount === 1 ? "" : "s"}.`, true);
+  }
+  await showRoute(currentRoute());
+  await renderReports();
+  updateAll();
+  setInterval(() => { enforceSensorDataWatchdog(); updateAll(); }, 500);
   setInterval(renderOverview, 5000);
 }
 
 initializeApp();
+ 

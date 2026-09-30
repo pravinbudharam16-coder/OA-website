@@ -1,5 +1,4 @@
-
-const cacheName = "smartoa-ui-v21-no-architecture";
+const cacheName = "smartoa-ui-womac-overview-startup-fix-v2";
 const assets = [
   "./login.html",
   "./02_Frontend/assets/css/login.css",
@@ -12,7 +11,7 @@ const assets = [
   "./02_Frontend/assets/images/icon.svg",
   "./02_Frontend/assets/images/icon-192.png",
   "./02_Frontend/assets/images/icon-512.png",
-  "./02_Frontend/assets/images/smartoa-logo.png",
+  "./02_Frontend/assets/images/smartoa-ui-sensor-submit-v2.png",
   "./02_Frontend/assets/images/oa-risk-marker.svg",
   "./privacy.html",
   "./terms.html",
